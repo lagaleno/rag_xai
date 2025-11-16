@@ -1,25 +1,33 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -e
 
-echo "==== Instalando dependências Python ===="
-pip install -r requirements.txt
-pip3 install -r requirements.txt
-echo "==== Checando se Ollama está instalado ===="
-if ! command -v ollama &> /dev/null
-then
-    echo "⚠️  Ollama não encontrado. Instale a partir de https://ollama.com/download"
+echo "🔍 Checking available Python/pip commands..."
+
+# Detect Python
+if command -v python3 &>/dev/null; then
+    PYTHON_CMD="python3"
+elif command -v python &>/dev/null; then
+    PYTHON_CMD="python"
+else
+    echo "❌ No Python found. Please install Python 3.8+ and try again."
     exit 1
 fi
 
-echo "==== Checando se o modelo llama3 está disponível ===="
-if ! ollama list | grep -q "llama3"
-then
-    echo "📥 Baixando modelo 'llama3'..."
-    ollama pull llama3
+# Detect pip
+if command -v pip3 &>/dev/null; then
+    PIP_CMD="pip3"
+elif command -v pip &>/dev/null; then
+    PIP_CMD="pip"
 else
-    echo "👍 Modelo 'llama3' já está instalado."
+    echo "❌ No pip found. Please install pip and try again."
+    exit 1
 fi
 
-echo "==== Testando uma chamada simples ao modelo ===="
-echo 'Say "hello"' | ollama run llama3
+echo "✔ Using Python: $PYTHON_CMD"
+echo "✔ Using Pip: $PIP_CMD"
 
-echo "==== Instalação concluída com sucesso! ===="
+echo "📦 Installing requirements..."
+$PIP_CMD install --upgrade pip setuptools wheel
+$PIP_CMD install -r requirements.txt
+
+echo "🎉 Installation complete!"
