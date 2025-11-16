@@ -2,7 +2,7 @@
 
 echo "==== Instalando dependências Python ===="
 pip install -r requirements.txt
-
+pip3 install -r requirements.txt
 echo "==== Checando se Ollama está instalado ===="
 if ! command -v ollama &> /dev/null
 then
