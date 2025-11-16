@@ -3,9 +3,9 @@ import json
 import time
 import random
 from typing import Dict, Any, List
+import ast
 
 import requests
-from datasets import load_dataset
 from tqdm.auto import tqdm
 import pandas as pd
 
@@ -73,10 +73,11 @@ def call_llm_json_llama(system: str, user: str, temperature: float = 0.3) -> Dic
 # 3) CARREGAR HOTPOTQA
 # ==========================
 
-print("📥 Carregando HotpotQA...")
-ds = load_dataset("hotpot_qa", "distractor")
-train = ds["train"].shuffle(seed=SEED).select(range(min(N_SAMPLES, len(ds["train"]))))
-print(train)
+# Carrega o arquivo csv
+train = pd.read_csv("../0-utils/hotpotqa_train.csv", sep=",")
+# Ajusta colunas que originalmente eram dicionários
+train["context"] = train["context"].apply(ast.literal_eval)
+train["supporting_facts"] = train["supporting_facts"].apply(ast.literal_eval)
 
 # ==========================
 # 4) FUNÇÃO: construir CHUNK
@@ -183,10 +184,10 @@ Return ONLY a single valid JSON object. Do not include any extra text before or 
 rows_summary = []
 
 with open(JSONL_OUT, "w", encoding="utf-8") as fout:
-    for ex in tqdm(train, desc="Gerando dataset com LLaMA"):
-        q = ex["question"]
-        gold_answer = ex["answer"]
-        chunk = build_chunk_from_supporting_facts(ex)
+    for index, row in tqdm(train.iterrows(), desc="Gerando dataset com LLaMA"):
+        q = row["question"]
+        gold_answer = row["answer"]
+        chunk = build_chunk_from_supporting_facts(row)
         chunk_text = chunk["text"]
 
         if not chunk_text:
@@ -204,7 +205,7 @@ with open(JSONL_OUT, "w", encoding="utf-8") as fout:
                 temperature=0.4,
             )
         except Exception as e:
-            print(f"⚠️ Erro ao gerar explicações para id={ex.get('_id','')} -> {e}")
+            print(f"⚠️ Erro ao gerar explicações para id={row.get('_id','')} -> {e}")
             continue
 
         expl_correct = gen.get("correct", "").strip()
@@ -212,7 +213,7 @@ with open(JSONL_OUT, "w", encoding="utf-8") as fout:
         expl_incorrect = gen.get("incorrect", "").strip()
 
         rec = {
-            "id": ex.get("id", ""),
+            "id": row.get("id", ""),
             "dataset": "hotpotqa-distractor",
             "question": q,
             "answer": gold_answer,

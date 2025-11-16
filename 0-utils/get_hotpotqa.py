@@ -5,7 +5,7 @@ import pandas as pd
 
 
 # Quantidade de amostras de HotpotQA
-N_SAMPLES = 10   # começa com 10 ou 30 pra validar
+N_SAMPLES = 10
 
 SEED = 42
 random.seed(SEED)
@@ -14,7 +14,7 @@ random.seed(SEED)
 HOTPOTQA_OUT = "hotpotqa_train.csv"
 
 # ==========================
-# 3) CARREGAR HOTPOTQA
+# CARREGAR HOTPOTQA
 # ==========================
 
 print("📥 Carregando HotpotQA...")
