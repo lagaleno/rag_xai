@@ -60,8 +60,8 @@ project_root/
 ├── 3-experiments/
 │   ├── utils.py/            # File with functions to be used in scripts of the experiment
 │   ├── cosine_similarity/   # Compute the cosine similarity
-    ├── jaccard_similarity/  # Compute Jaccard similarity
-    └── ...
+│   ├── jaccard_similarity/  # Compute Jaccard similarity
+│   └── ...
 │
 ├── requirements.txt
 ├── install.sh
