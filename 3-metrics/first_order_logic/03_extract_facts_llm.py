@@ -6,15 +6,19 @@ from pathlib import Path
 from typing import Dict, List, Any
 
 import pandas as pd
+from pathlib import Path
 
 # ================== CONFIGURAÇÕES ==================
 
-# Esquema de predicados (já gerado antes)
-SCHEMA_FILE = "predicate_schema.json"
+THIS_FILE = Path(__file__).resolve()
+PROJECT_ROOT = THIS_FILE.parents[2]
+
+# Arquivo de entrada com o schema de predicados (o que você já gerou)
+SCHEMA_FILE = PROJECT_ROOT / "3-metrics" / "first_order_logic" / "predicate_schema.json"
 
 # CSV de entrada com o dataset de explicações
 # Ajuste este caminho para o seu arquivo real
-INPUT_CSV = "../../1-creating_dataset/explainrag_hotpot_llama_summary.csv"
+INPUT_CSV = PROJECT_ROOT / "1-creating_dataset" / "explainrag_hotpot_llama_summary.csv"
 
 # Colunas esperadas no CSV (ajuste se necessário)
 COL_ID = "id"
@@ -211,6 +215,7 @@ def main():
     print(f"📥 Loading dataset from: {INPUT_CSV}")
     df = pd.read_csv(INPUT_CSV)
 
+    print("OI")
     if MAX_ROWS is not None:
         df = df.head(MAX_ROWS)
 

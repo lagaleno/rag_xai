@@ -3,14 +3,18 @@ from pathlib import Path
 from typing import Dict, List, Tuple, Set, Any
 
 import pandas as pd
+from pathlib import Path
 
 # ================== CONFIGURAÇÕES ==================
 
-SCHEMA_FILE = "predicate_schema.json"
-RULES_FILE = "logical_rules.json"
+THIS_FILE = Path(__file__).resolve()
+PROJECT_ROOT = THIS_FILE.parents[2]
+
+SCHEMA_FILE = PROJECT_ROOT / "3-metrics" / "first_order_logic" / "predicate_schema.json"
+RULES_FILE = PROJECT_ROOT / "3-metrics" / "first_order_logic" / "logical_rules.json"
 
 # Arquivo gerado pelo 03_extract_facts_llm.py
-FACTS_JSONL = "facts_extracted_llm.jsonl"
+FACTS_JSONL = PROJECT_ROOT / "3-metrics" / "first_order_logic" / "facts_extracted_llm.jsonl"
 
 # Arquivo de saída com métricas por explicação
 OUTPUT_CSV = "logical_metrics_results.csv"

@@ -1,11 +1,15 @@
 import json
 import os
 import subprocess
+from pathlib import Path
 
 # ================== CONFIGURAÇÕES ==================
 
+THIS_FILE = Path(__file__).resolve()
+PROJECT_ROOT = THIS_FILE.parents[2]
+
 # Arquivo de entrada com o schema de predicados (o que você já gerou)
-SCHEMA_FILE = "predicate_schema.json"
+SCHEMA_FILE = PROJECT_ROOT / "3-metrics" / "first_order_logic" / "predicate_schema.json"
 
 # Arquivo de saída com as regras sugeridas
 RULES_OUT = "logical_rules.json"

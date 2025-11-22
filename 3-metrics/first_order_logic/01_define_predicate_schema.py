@@ -4,11 +4,14 @@ import random
 import subprocess
 
 import pandas as pd
-
+from pathlib import Path
 # ================== CONFIGURAÇÕES ==================
 
+THIS_FILE = Path(__file__).resolve()
+PROJECT_ROOT = THIS_FILE.parents[2]
+
 # Caminho para o CSV do HotpotQA preparado
-HOTPOT_CSV = "../../0-utils/hotpotqa_train.csv"
+HOTPOT_CSV = PROJECT_ROOT / "0-utils" / "hotpotqa_train.csv"
 
 # Número de exemplos para colocar no prompt
 N_EXAMPLES = 3

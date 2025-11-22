@@ -28,7 +28,7 @@ EXPLAINRAG_DATASET = PROJECT_ROOT / "2-validating_dataset" / "explicability_data
 FACTS_JSONL = PROJECT_ROOT / "3-metrics" / "first_order_logic" / "facts_extracted_llm.jsonl"
 LOGIC_RESULTS_CSV = PROJECT_ROOT / "3-metrics" / "first_order_logic" / "logical_metrics_results.csv"
 
-N_TRIALS = 5  # número de trials da métrica lógica
+N_TRIALS = 1  # número de trials da métrica lógica
 
 def run_script(path: Path, func_name: str | None = "main"):
     """
