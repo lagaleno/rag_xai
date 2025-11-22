@@ -9,8 +9,6 @@ import pandas as pd
 
 # ================== CONFIGURAÇÕES ==================
 
-BASE_DIR = Path("3-experiments/first_order_logic")
-
 # Esquema de predicados (já gerado antes)
 SCHEMA_FILE = "predicate_schema.json"
 
@@ -206,7 +204,6 @@ def process_row(schema: Dict[str, Any], row: pd.Series) -> List[Dict[str, Any]]:
 
 
 def main():
-    # BASE_DIR.mkdir(parents=True, exist_ok=True)
 
     print(f"📥 Loading predicate schema from: {SCHEMA_FILE}")
     schema = load_schema(SCHEMA_FILE)
