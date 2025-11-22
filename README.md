@@ -57,11 +57,11 @@ project_root/
 │   ├── figures/                  # Evaluation plots (precision, recall, F1)
 │   └── metrics/                  # Evaluation metrics (precision, recall, F1)
 │
-├── 3-experiments/
+├── 3-metrics/
 │   ├── utils.py/            # File with functions to be used in scripts of the experiment
 │   ├── cosine_similarity/   # Compute the cosine similarity
 │   ├── jaccard_similarity/  # Compute Jaccard similarity
-│   └── ...
+│   └── first_order_logic/   # Evaluate the explenation through first order logic
 │
 ├── requirements.txt
 ├── install.sh
@@ -118,14 +118,14 @@ Outputs:
 
 ---
 
-### **Step 4 — Experiments**
-This project includes a set of experiments to analyze how different automatic metrics behave when evaluating natural-language explanations in a RAG setting. All experiments assume that the explanation dataset has already been generated, the file: `1-creating_dataset/explainrag_hotpot_llama.jsonl`.
+### **Step 4 — Metrics**
+This project includes a set of metrics to analyze how different automatic metrics behave when evaluating natural-language explanations in a RAG setting. All experiments assume that the explanation dataset has already been generated, the file: `1-creating_dataset/explainrag_hotpot_llama.jsonl`.
 
 #### Cosine Similarity
 This experiment measures the global semantic similarity between each explanation and its supporting chunk using sentence embeddings and cosine similarity. To run:
 
 ```bash
-python 3-experiments/cosine_similarity/run_cosine_similarity.py
+python 3-metrics/cosine_similarity/run_cosine_similarity.py
 ```
 What it does:
 
@@ -136,14 +136,14 @@ What it does:
   
 Output:
 ```
-3-experiments/cosine_similarity/cosine_similarity_results.csv
-3-experiments/cosine_similarity/cosine_similarity_summary_by_label.csv
+3-metrics/cosine_similarity/cosine_similarity_results.csv
+3-metrics/cosine_similarity/cosine_similarity_summary_by_label.csv
 ```
 #### Jaccard Similarity
 This experiment computes a token-level Jaccard similarity between each explanation and its chunk, serving as a simple lexical baseline for comparison with embedding-based methods. To run:
 
 ```bash
-python 3-experiments/jaccard_similarity/run_jaccard_similarity.py
+python 3-metrics/jaccard_similarity/run_jaccard_similarity.py
 ```
 What it does:
 - Loads explainrag_dataset.jsonl
@@ -153,12 +153,42 @@ What it does:
 
 Output:
 ```
-3-experiments/jaccard_similarity/jaccard_similarity_results.csv
-3-experiments/jaccard_similarity/jaccard_similarity_summary_by_label.csv
+3-metrics/jaccard_similarity/jaccard_similarity_results.csv
+3-metrics/jaccard_similarity/jaccard_similarity_summary_by_label.csv
 ```
 
+#### Logical Inference Metric (First-Order Logic)
+
+This experiment evaluates each explanation using a symbolic reasoning engine based on first-order logic (FOL).  
+The goal is to measure how much of an explanation can be logically supported or inferred from the chunk through a set of predefined predicates and inference rules.
+
+To run:
+
+```bash
+python 3-experiments/first_order_logic/04_inference_metric_prototype.py
+```
+What it does:
+- Loads the predicate schema and logical rules (predicate_schema.json, logical_rules.json)
+- Reads the extracted factual representations (facts_extracted_llm.jsonl) produced by the LLM
+- For each explanation:
+    - Converts chunk and explanation facts into structured predicates
+    - Performs forward-chaining (logical closure) over chunk facts
+    - Computes:
+        - TP: facts asserted in the explanation that are entailed by the chunk
+        - FP: facts asserted in the explanation that are not supported by the chunk
+        - FN: facts inferable from the chunk but missing from the explanation
+    - Computes precision, recall, and F1 in this logical space
+- Aggregates metrics by explanation label (correct, incomplete, incorrect)
+
+Output:
+```bash
+3-metrics/first_order_logic/logical_metrics_results.csv
+```
+Example Columns include: `id, explanation_label, tp, fp, fn, precision, recall, f1`
+
+
 ### Shared Utilities
-Experiments reuse common helper functions defined in: `3-experiments/utils.py`
+Metrics computation reuse common helper functions defined in: `3-metrics/utils.py`
 
 This module:
 - parses the JSONL dataset,
