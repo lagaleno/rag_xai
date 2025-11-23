@@ -1,53 +1,44 @@
 {
   "predicates": [
     {
-      "name": "type",
+      "name": "LOCATED_AT",
       "args": [
         "entity",
-        "person",
-        "work"
+        "location"
       ],
-      "description": "The type of an entity"
+      "description": "Entity is located at a specific location"
     },
     {
-      "name": "authorship",
+      "name": "AUTHORED_BY",
       "args": [
-        "entity",
-        "person"
+        "work",
+        "author"
       ],
-      "description": "A person is the author of a work"
+      "description": "Work was authored by the given author"
     },
     {
-      "name": "membership",
+      "name": "PART_OF",
       "args": [
         "entity",
         "group"
       ],
-      "description": "An entity is a member of a group"
+      "description": "Entity is part of a specific group or category"
     },
     {
-      "name": "location",
+      "name": "RELATED_TO",
       "args": [
-        "entity",
-        "place"
+        "entity1",
+        "entity2"
       ],
-      "description": "A location where an event or activity takes place"
+      "description": "Entity1 has some relation to entity2 (e.g., spouse, colleague, etc.)"
     },
     {
-      "name": "relation",
+      "name": "FILMED_IN",
       "args": [
-        "person",
-        "person"
+        "film",
+        "location"
       ],
-      "description": "Two people have a specific relation (e.g. marriage, friendship)"
-    },
-    {
-      "name": "participation",
-      "args": [
-        "entity",
-        "event"
-      ],
-      "description": "An entity participates in an event"
+      "description": "Film was filmed in a specific location"
     }
   ]
 }

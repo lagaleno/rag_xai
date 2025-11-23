@@ -5,6 +5,6 @@ jaccard_similarity,incorrect,0.2110762436744038,0.0651860469673917,9
 cosine_similarity,correct,0.8185271422068278,0.0887890164791948,9
 cosine_similarity,incomplete,0.7698611683315701,0.0720065777335087,9
 cosine_similarity,incorrect,0.7039927509095933,0.1054279498453738,9
-logic_f1,correct,0.1333333333333333,,1
-logic_f1,incomplete,0.0888888888888888,,1
+logic_f1,correct,0.1,,1
+logic_f1,incomplete,0.0555555555555555,,1
 logic_f1,incorrect,0.0,,1
