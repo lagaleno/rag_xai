@@ -6,10 +6,23 @@ The project includes:
 - automatic extraction of HotpotQA data  
 - generation of a dataset containing examples of three explanation types (*correct*, *incomplete*, *incorrect*) using an LLM  
 - preliminary validation using sentence-wise embedding similarity  
-- TODO: add description of experiment
+- a experimentation pipeline for comparing multiple automatic explainability metrics.  The experiments include:
+  - cosine similarity between each explanation and its supporting chunk (embedding-based semantic overlap)
+  - Jaccard similarity (lexical overlap baseline)
+  - logical-inference–based evaluation using a predicate schema, LLM-generated logical rules, fact extraction, and an inference engine
+  - multi-trial execution for the logic-based metric, allowing variance estimation
+  - automated result aggregation, producing per-metric summaries (mean, std, count) grouped by explanation label
+  - generation of plots (bar plots, boxplots, grouped comparisons) for analysis and inclusion in the research paper
 
 ---
-
+## TL;DR
+- Make sure you have all technical Prerequisites installed, described in `requirements.txt`
+- Make sure you have the file `hotpotqa_tra.csv` on the folder `0-utils`
+- Create the explanation dataset by the script `1-creating_dataset/create_dataset.py` or has one dowloaded and on folder `1-creating_dataset`
+- Evaluate the data set by the script `2-validating_dataset/validate_dataset.py`
+- Run the experiment throygh `4-experiment/main.py` running `python main.py`
+- Run the analysis script to get the graphs and aggregated csv on `5-analysis\analyze.py`
+  
 ## 📦 1. Prerequisites
 
 - **Python 3.9+**  
@@ -72,12 +85,12 @@ project_root/
 
 ## 📝 4. Step-by-Step Usage
 
-### **Step 1 — Prepare HotpotQA**
+### **Step 0 — Prepare HotpotQA**
 
 Download and convert the dataset:
 
 ```bash
-python 0-utils/prepare_hotpot_csv.py
+python 0-utils/get_hotpotqa.py
 ```
 
 Output:
@@ -88,10 +101,10 @@ Output:
 
 ---
 
-### **Step 2 — Generate the Explanation Dataset**
+### **Step 1 — Generate the Explanation Dataset**
 
 ```bash
-python 1-creating_dataset/generate_explanations.py
+python 1-creating_dataset/create_dataset.py
 ```
 
 Output:
@@ -102,23 +115,23 @@ Output:
 
 ---
 
-### **Step 3 — Validate the Dataset (Sanity Check)**
+### **Step 2 — Validate the Dataset (Sanity Check)**
 
 ```bash
-python 2-validating_dataset/evaluate_embeddings.py
+python 2-validating_dataset/evaluate_dataset.py
 ```
 
 Outputs:
 
-- explanations_sentencewise_metrics.csv  
-- explanations_summary_by_label.csv  
-- f1_by_label_boxplot.png  
-- precision_by_label_boxplot.png  
-- recall_by_label_boxplot.png  
+- explanations_sentencewise_embeddings_metrics.csv  
+- explanations_sentecewise_embeddings_summary_by_label.csv  
+- emb_f1_by_label_boxplot.png  
+- emb_precision_by_label_boxplot.png  
+- emb_recall_by_label_boxplot.png  
 
 ---
 
-### **Step 4 — Metrics**
+### **Step 3 — Metrics**
 This project includes a set of metrics to analyze how different automatic metrics behave when evaluating natural-language explanations in a RAG setting. All experiments assume that the explanation dataset has already been generated, the file: `1-creating_dataset/explainrag_hotpot_llama.jsonl`.
 
 #### Cosine Similarity
@@ -165,7 +178,7 @@ The goal is to measure how much of an explanation can be logically supported or 
 To run:
 
 ```bash
-python 3-experiments/first_order_logic/04_inference_metric_prototype.py
+python 3-metrics/first_order_logic/04_inference_metric_prototype.py
 ```
 What it does:
 - Loads the predicate schema and logical rules (predicate_schema.json, logical_rules.json)
@@ -186,8 +199,7 @@ Output:
 ```
 Example Columns include: `id, explanation_label, tp, fp, fn, precision, recall, f1`
 
-
-### Shared Utilities
+#### Shared Utilities
 Metrics computation reuse common helper functions defined in: `3-metrics/utils.py`
 
 This module:
@@ -197,6 +209,21 @@ This module:
     - chunk
     - explanations (correct, incomplete, incorrect)
 - flattens them into chunk–explanation pairs for metric computation.
+
+### **Step 4 — Experiment**
+This part is to mainly orchestrate the running of the experiment, putting on order the different scripts descibed above to get the metrics results on csvs.  
+
+```bash
+python 4-experiment/main.py
+```
+The outputs repeents the outputs of the different metrics
+
+### **Step 5 — Analysist**
+Through the results obtained in the experiments this script will shocase graphs and table to assist in the analysis of the result
+
+```bash
+python 5-analysis/analyze.py
+```
 
 ---
 
