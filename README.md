@@ -21,7 +21,7 @@ The project includes:
 - Create the explanation dataset by the script `1-creating_dataset/create_dataset.py` or has one dowloaded and on folder `1-creating_dataset`
 - Evaluate the data set by the script `2-validating_dataset/validate_dataset.py`
 - Run the experiment throygh `4-experiment/main.py` running `python main.py`
-- Run the analysis script to get the graphs and aggregated csv on `5-analysis\analyze.py`
+- Run the analysis script to get the graphs and aggregated csv on `5-analysis/analyze.py`
   
 ## 📦 1. Prerequisites
 
@@ -71,10 +71,20 @@ project_root/
 │   └── metrics/                  # Evaluation metrics (precision, recall, F1)
 │
 ├── 3-metrics/
-│   ├── utils.py/            # File with functions to be used in scripts of the experiment
+│   ├── utils.py             # File with functions to be used in scripts of the experiment
 │   ├── cosine_similarity/   # Compute the cosine similarity
 │   ├── jaccard_similarity/  # Compute Jaccard similarity
 │   └── first_order_logic/   # Evaluate the explenation through first order logic
+│
+├── 4-experiment/
+│   ├── main.py                          # Script to orchestrate the computation of metrics
+│   ├── logical_summary_results_trial/   # Store the results from each trial
+│   ├── *.csv/                           # Store the results from each metrics in csv files
+│
+├── 5-analysis/
+│   ├── analyze.py              # Script to perform tha analysis of the metrics result
+│   ├── figure/                 # Store graph figures generated
+│   ├── *.csv/                  # Store the summary results for each label in each metric
 │
 ├── requirements.txt
 ├── install.sh
