@@ -228,7 +228,7 @@ python 4-experiment/main.py
 ```
 The outputs repeents the outputs of the different metrics
 
-### **Step 5 — Analysist**
+### **Step 5 — Analysis**
 Through the results obtained in the experiments this script will shocase graphs and table to assist in the analysis of the result
 
 ```bash
