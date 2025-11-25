@@ -241,7 +241,6 @@ def main():
     print(f"📥 Loading dataset from: {INPUT_CSV}")
     df = pd.read_csv(INPUT_CSV)
 
-    print("OI")
     if MAX_ROWS is not None:
         df = df.head(MAX_ROWS)
 
