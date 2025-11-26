@@ -55,13 +55,13 @@ CREATE TABLE validation (
         ON UPDATE CASCADE
 ) ENGINE=InnoDB;
 
--- Resultados agregados de cosseno
+-- Resultados de cosseno
 CREATE TABLE cosine_results (
     id INT AUTO_INCREMENT PRIMARY KEY,
     experiment_id INT NOT NULL,
-    similarity_correct JSON,
-    similarity_incorrect JSON,
-    similarity_incomplete JSON,
+    sample_id VARCHAR(64),
+    label VARCHAR(32),
+    cosine FLOAT,
     metadata JSON,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_cosine_experiment
@@ -70,13 +70,15 @@ CREATE TABLE cosine_results (
         ON UPDATE CASCADE
 ) ENGINE=InnoDB;
 
--- Resultados agregados de Jaccard
+-- Resultados de Jaccard
+DROP TABLE IF EXISTS jaccard_results;
+
 CREATE TABLE jaccard_results (
     id INT AUTO_INCREMENT PRIMARY KEY,
     experiment_id INT NOT NULL,
-    similarity_correct JSON,
-    similarity_incorrect JSON,
-    similarity_incomplete JSON,
+    sample_id VARCHAR(64),
+    label VARCHAR(32),
+    jaccard FLOAT,
     metadata JSON,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_jaccard_experiment

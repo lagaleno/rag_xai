@@ -6,48 +6,55 @@
         "entity",
         "location"
       ],
-      "description": "An entity is located at a specific location"
-    },
-    {
-      "name": "part_of",
-      "args": [
-        "entity",
-        "whole"
-      ],
-      "description": "One entity is part of another entity or whole"
+      "description": "The entity is located at the location."
     },
     {
       "name": "type_of",
       "args": [
         "entity",
-        "category"
+        "type"
       ],
-      "description": "An entity belongs to a certain category or type"
+      "description": "The entity has a type."
     },
     {
-      "name": "has_relationship",
+      "name": "created_by",
       "args": [
-        "entity1",
-        "entity2",
-        "relation"
+        "entity",
+        "creator"
       ],
-      "description": "Two entities have a specific relationship with each other"
+      "description": "The entity was created by the creator."
+    },
+    {
+      "name": "founded_by",
+      "args": [
+        "organization",
+        "founder"
+      ],
+      "description": "The organization was founded by the founder."
     },
     {
       "name": "married_to",
       "args": [
-        "actor",
-        "spouse"
+        "person1",
+        "person2"
       ],
-      "description": "An actor is married to another person"
+      "description": "Person1 is married to Person2."
     },
     {
-      "name": "starred_in",
+      "name": "starring",
       "args": [
         "actor",
-        "film"
+        "movie"
       ],
-      "description": "An actor starred in a film"
+      "description": "The actor starred in the movie."
+    },
+    {
+      "name": "based_on",
+      "args": [
+        "work",
+        "source"
+      ],
+      "description": "The work was based on the source."
     }
   ]
 }

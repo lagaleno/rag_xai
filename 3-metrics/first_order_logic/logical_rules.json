@@ -1,3 +1,38 @@
 {
-  "rules": []
+  "rules": [
+    {
+      "name": "Rule 1",
+      "description": "An entity is located in the same location as another if they were created by the same creator.",
+      "premises": [
+        {
+          "predicate": "created_by",
+          "args": [
+            "entity1",
+            "creator"
+          ]
+        },
+        {
+          "predicate": "created_by",
+          "args": [
+            "entity2",
+            "creator"
+          ]
+        },
+        {
+          "predicate": "located_in",
+          "args": [
+            "entity1",
+            "location"
+          ]
+        }
+      ],
+      "conclusion": {
+        "predicate": "located_in",
+        "args": [
+          "entity2",
+          "location"
+        ]
+      }
+    }
+  ]
 }
