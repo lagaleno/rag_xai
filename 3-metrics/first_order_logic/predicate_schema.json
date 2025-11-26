@@ -1,60 +1,44 @@
 {
   "predicates": [
     {
-      "name": "located_at",
+      "name": "located_in",
       "args": [
         "entity",
-        "location"
+        "place"
       ],
-      "description": "Entity is located at a specific location."
-    },
-    {
-      "name": "member_of",
-      "args": [
-        "entity",
-        "group"
-      ],
-      "description": "Entity belongs to a particular group or organization."
+      "description": "Entity is located in a place"
     },
     {
       "name": "type_of",
       "args": [
         "entity",
-        "category"
+        "type"
       ],
-      "description": "Entity has a certain type or category."
+      "description": "Entity has a type or category"
     },
     {
-      "name": "created_by",
+      "name": "author_of",
       "args": [
-        "entity",
-        "creator"
+        "person",
+        "work"
       ],
-      "description": "Entity was created by a specific person or entity."
+      "description": "Person is the author of a work"
+    },
+    {
+      "name": "married_to",
+      "args": [
+        "person1",
+        "person2"
+      ],
+      "description": "Two people are married to each other"
     },
     {
       "name": "starred_in",
       "args": [
-        "actor",
-        "movie"
+        "person",
+        "work"
       ],
-      "description": "Actor starred in a particular movie."
-    },
-    {
-      "name": "played_role",
-      "args": [
-        "actor",
-        "role"
-      ],
-      "description": "Actor played a certain role in a movie or show."
-    },
-    {
-      "name": "has_parent",
-      "args": [
-        "entity",
-        "parent"
-      ],
-      "description": "Entity has a parent entity or relationship."
+      "description": "Person starred in a work, such as a movie or TV show"
     }
   ]
 }

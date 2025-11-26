@@ -23,7 +23,7 @@ env/
 mariadb-data/
 mysql-data/
 db-data/
-data/
+# data/
 
 # SQL dumps or local DB files
 *.db
@@ -57,17 +57,17 @@ data/
 # 3-metrics/**/logical_rules.json
 
 # # Experiment outputs
-# 4-experiment/*.csv
-# 4-experiment/logical_summary_results_trial/
-# 4-experiment/logical_result_trials_out/
-# 4-experiment/logical_summary_results_trials_out/
-# 4-experiment/facts_extracted_trial/
+# 5-experiment/*.csv
+# 5-experiment/logical_summary_results_trial/
+# 5-experiment/logical_result_trials_out/
+# 5-experiment/logical_summary_results_trials_out/
+# 5-experiment/facts_extracted_trial/
 
 # # Analysis outputs
-# 5-analysis/*.csv
-# 5-analysis/figure/
-# 5-analysis/report/
-# 5-analysis/*.png
+# 4-analysis/*.csv
+# 4-analysis/figure/
+# 4-analysis/report/
+# 4-analysis/*.png
 
 ##############################
 # SYSTEM / OS FILES          #

@@ -30,13 +30,13 @@ The workflow includes:
 
 3. **Run the full experiment** (recreates datasets if missing)  
    ```bash
-   cd 4-experiment
+   cd 5-experiment
    python main.py
    ```
 
 4. **Analyze results (graphs + tables)**  
    ```bash
-   cd 5-analysis
+   cd 4-analysis
    python analyze.py
    ```
 
@@ -124,10 +124,10 @@ project_root/
 │   ├── jaccard_similarity/
 │   └── first_order_logic/
 │
-├── 4-experiment/
+├── 5-experiment/
 │   └── main.py                       # Orchestrates the full experiment
 │
-├── 5-analysis/
+├── 4-analysis/
 │   └── analyze.py                    # Final plots + aggregated results
 │
 ├── docker-compose.yml
@@ -165,7 +165,7 @@ This script:
 Run:
 
 ```bash
-cd 4-experiment
+cd 5-experiment
 python main.py
 ```
 
@@ -178,7 +178,7 @@ A new row will appear in the `experiment` table.
 After the experiment is complete:
 
 ```bash
-cd 5-analysis
+cd 4-analysis
 python analyze.py
 ```
 
@@ -235,10 +235,10 @@ ports:
 
 ### Import errors (`ModuleNotFoundError: provenance`)
 
-Always run scripts from the folder `4-experiment`:
+Always run scripts from the folder `5-experiment`:
 
 ```bash
-cd 4-experiment
+cd 5-experiment
 python main.py
 ```
 

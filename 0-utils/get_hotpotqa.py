@@ -24,7 +24,7 @@ HOTPOTQA_OUT = PROJECT_ROOT / "0-utils" / "hotpotqa_train.csv"
 # CARREGAR HOTPOTQA
 # ==========================
 
-# Tenta recuperar o EXPERIMENT_ID do ambiente (setado em 4-experiment/main.py)
+# Tenta recuperar o EXPERIMENT_ID do ambiente (setado em 5-experiment/main.py)
 experiment_id_env = os.getenv("EXPERIMENT_ID")
 experiment_id = int(experiment_id_env) if experiment_id_env is not None else None
 

@@ -227,7 +227,7 @@ experiment_id_env = os.getenv("EXPERIMENT_ID")
 if experiment_id_env is None:
     raise RuntimeError(
         "EXPERIMENT_ID not found in environment. "
-        "Run this script via 4-experiment/main.py."
+        "Run this script via 5-experiment/main.py."
     )
 
 experiment_id = int(experiment_id_env)

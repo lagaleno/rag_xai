@@ -1,83 +1,117 @@
 {
   "rules": [
     {
-      "name": "Membership Inheritance",
-      "description": "If an entity is a member of a group and the group has a parent, then the entity is also a member of its parent.",
+      "name": "Type Inheritance",
+      "description": "Entities of a certain type are located in the same place.",
       "premises": [
         {
-          "predicate": "member_of",
+          "predicate": "located_in",
           "args": [
-            "entity",
-            "group"
+            "e1",
+            "p"
           ]
         },
         {
-          "predicate": "has_parent",
+          "predicate": "type_of",
           "args": [
-            "group",
-            "parent"
+            "e2",
+            "t"
+          ]
+        },
+        {
+          "predicate": "type_of",
+          "args": [
+            "e1",
+            "t"
           ]
         }
       ],
       "conclusion": {
-        "predicate": "member_of",
+        "predicate": "located_in",
         "args": [
-          "entity",
-          "parent"
+          "e2",
+          "p"
         ]
       }
     },
     {
-      "name": "Creator Inheritance",
-      "description": "If an entity was created by someone and the creator is a member of a group, then the entity is also a member of that group.",
+      "name": "Authorship and Location",
+      "description": "The author of a work is located in the same place as the work.",
       "premises": [
         {
-          "predicate": "created_by",
+          "predicate": "author_of",
           "args": [
-            "entity",
-            "creator"
+            "a",
+            "w"
           ]
         },
         {
-          "predicate": "member_of",
+          "predicate": "located_in",
           "args": [
-            "creator",
-            "group"
+            "a",
+            "p"
           ]
         }
       ],
       "conclusion": {
-        "predicate": "member_of",
+        "predicate": "located_in",
         "args": [
-          "entity",
-          "group"
+          "w",
+          "p"
         ]
       }
     },
     {
-      "name": "Actor Inheritance",
-      "description": "If an actor played a role in a movie and the movie was starred in by another actor, then the first actor also starred in that movie.",
+      "name": "Marriage and Location",
+      "description": "The spouses of a person are located in the same place as that person.",
       "premises": [
         {
-          "predicate": "played_role",
+          "predicate": "married_to",
           "args": [
-            "actor",
-            "role"
+            "p1",
+            "p2"
           ]
         },
+        {
+          "predicate": "located_in",
+          "args": [
+            "p1",
+            "p"
+          ]
+        }
+      ],
+      "conclusion": {
+        "predicate": "located_in",
+        "args": [
+          "p2",
+          "p"
+        ]
+      }
+    },
+    {
+      "name": "Starring and Location",
+      "description": "The actor in a work is located in the same place as that work.",
+      "premises": [
         {
           "predicate": "starred_in",
           "args": [
-            "movie",
-            "actor"
+            "a",
+            "w"
+          ]
+        },
+        {
+          "predicate": "located_in",
+          "args": [
+            "a",
+            "p"
           ]
         }
       ],
       "conclusion": {
-        "predicate": "starred_in",
+        "predicate": "located_in",
         "args": [
-          "actor",
-          "movie"
+          "w",
+          "p"
         ]
       }
     }
