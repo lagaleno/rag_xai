@@ -1,56 +1,29 @@
 {
   "rules": [
     {
-      "name": "Authorship Inheritance",
-      "description": "An entity that is part of a whole is also the author of the work the whole is part of.",
+      "name": "Authorship inheritance",
+      "description": "An author's works are of a certain type if they are an author and their work is of that type.",
       "premises": [
         {
-          "predicate": "part_of",
+          "predicate": "AUTHOR",
           "args": [
             "entity",
-            "whole"
-          ]
-        },
-        {
-          "predicate": "played_role_in",
-          "args": [
-            "whole",
             "work"
           ]
-        }
-      ],
-      "conclusion": {
-        "predicate": "author_of",
-        "args": [
-          "entity",
-          "work"
-        ]
-      }
-    },
-    {
-      "name": "Marriage Transitivity",
-      "description": "If person1 is married to person2 and person2 is married to person3, then person1 is married to person3.",
-      "premises": [
-        {
-          "predicate": "married_to",
-          "args": [
-            "person1",
-            "person2"
-          ]
         },
         {
-          "predicate": "married_to",
+          "predicate": "TYPE",
           "args": [
-            "person2",
-            "person3"
+            "entity",
+            "type"
           ]
         }
       ],
       "conclusion": {
-        "predicate": "married_to",
+        "predicate": "TYPE",
         "args": [
-          "person1",
-          "person3"
+          "work",
+          "type"
         ]
       }
     }

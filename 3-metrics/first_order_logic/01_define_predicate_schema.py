@@ -33,6 +33,8 @@ LLAMA_MODEL_NAME = "llama3"
 SCHEMA_OUT = PROJECT_ROOT / "3-metrics" / "first_order_logic" / "predicate_schema.json"
 
 TEMPERATURE = 0.5
+
+EXAMPLES_ID = [] # guardar para proveniência
 # ===================================================
 
 
@@ -51,9 +53,9 @@ def load_sample_examples(csv_path: str, n: int = 3):
         n = len(df)
 
     sample = df.sample(n=n, random_state=42)
-
     examples = []
     for _, row in sample.iterrows():
+        id = str(row.get("id", "")).strip()
         question = str(row.get("question", "")).strip()
         answer = str(row.get("answer", "")).strip()
         context = str(row.get("context", "")).strip()
@@ -65,6 +67,8 @@ def load_sample_examples(csv_path: str, n: int = 3):
                 "context": context,
             }
         )
+
+        EXAMPLES_ID.append(id)
 
     return examples
 
@@ -245,9 +249,11 @@ def main():
 
     predicate_config = {
         "prompt": prompt,
-        "list_predicates": schema,
+        "list_predicates": schema["predicates"],
+        "qtt_predicates": len(schema["predicates"]),
         "model": LLAMA_MODEL_NAME,
         "number_examples": N_EXAMPLES,
+        "qa_examples_id": EXAMPLES_ID,
         "temperature": TEMPERATURE
     }
 

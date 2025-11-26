@@ -165,7 +165,8 @@ This script:
 Run:
 
 ```bash
-python 4-experiment/main.py
+cd 4-experiment
+python main.py
 ```
 
 A new row will appear in the `experiment` table.
@@ -177,7 +178,8 @@ A new row will appear in the `experiment` table.
 After the experiment is complete:
 
 ```bash
-python 5-analysis/analyze.py
+cd 5-analysis
+python analyze.py
 ```
 
 Outputs include:
@@ -233,10 +235,11 @@ ports:
 
 ### Import errors (`ModuleNotFoundError: provenance`)
 
-Always run scripts from the project root:
+Always run scripts from the folder `4-experiment`:
 
 ```bash
-python 4-experiment/main.py
+cd 4-experiment
+python main.py
 ```
 
 ---
