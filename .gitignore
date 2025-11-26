@@ -11,9 +11,6 @@ __pycache__/
 *.log
 *.tmp
 
-# IPython / Jupyter
-.ipynb_checkpoints/
-
 # Virtual environments
 venv/
 env/
@@ -30,7 +27,6 @@ data/
 
 # SQL dumps or local DB files
 *.db
-*.sql
 *.sql.gz
 *.sqlite
 *.sqlite3
