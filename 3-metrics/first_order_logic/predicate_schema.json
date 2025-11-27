@@ -1,0 +1,52 @@
+{
+  "predicates": [
+    {
+      "name": "author_of",
+      "args": [
+        "Person",
+        "Work"
+      ],
+      "description": "True when a person is the author of a specific work (e.g., book, movie, song)."
+    },
+    {
+      "name": "located_at",
+      "args": [
+        "Entity",
+        "Location"
+      ],
+      "description": "True when an entity is located at or has a connection to a specific location."
+    },
+    {
+      "name": "type_of",
+      "args": [
+        "Entity",
+        "Type"
+      ],
+      "description": "True when an entity belongs to or can be classified as a specific type (e.g., genre, category)."
+    },
+    {
+      "name": "part_of",
+      "args": [
+        "Entity",
+        "Whole"
+      ],
+      "description": "True when one entity is part of another entity (e.g., a component of a larger system)."
+    },
+    {
+      "name": "created_by",
+      "args": [
+        "Work",
+        "Person"
+      ],
+      "description": "True when a work was created by or under the direction of a specific person."
+    },
+    {
+      "name": "published_on",
+      "args": [
+        "Work",
+        "Date"
+      ],
+      "description": "True when a work was published on a specific date (e.g., release date, publication date)."
+    }
+  ]
+}

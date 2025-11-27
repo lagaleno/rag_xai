@@ -1,0 +1,58 @@
+{
+  "rules": [
+    {
+      "name": "authorship_inheritance",
+      "description": "Author of a work inherits authorship to its parts",
+      "premises": [
+        {
+          "predicate": "author_of",
+          "args": [
+            "P",
+            "W"
+          ]
+        },
+        {
+          "predicate": "part_of",
+          "args": [
+            "E",
+            "W"
+          ]
+        }
+      ],
+      "conclusion": {
+        "predicate": "author_of",
+        "args": [
+          "P",
+          "E"
+        ]
+      }
+    },
+    {
+      "name": "location_inheritance",
+      "description": "An entity is located at the same location as its parts",
+      "premises": [
+        {
+          "predicate": "located_at",
+          "args": [
+            "E",
+            "L"
+          ]
+        },
+        {
+          "predicate": "part_of",
+          "args": [
+            "P",
+            "E"
+          ]
+        }
+      ],
+      "conclusion": {
+        "predicate": "located_at",
+        "args": [
+          "P",
+          "L"
+        ]
+      }
+    }
+  ]
+}
