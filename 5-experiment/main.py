@@ -28,7 +28,7 @@ GET_HOTPOTQA_SCRIPT = PROJECT_ROOT / "0-utils" / "get_hotpotqa.py"
 CREATE_DATASET_SCRIPT = PROJECT_ROOT / "1-creating_dataset" / "create_dataset.py"
 VALIDATE_SCRIPT = PROJECT_ROOT / "2-validating_dataset" / "validate_dataset.py"
 
-JACCARD_SCRIPT = PROJECT_ROOT / "3-metrics" / "jaccard_similarity" / "run_jaccard_similarity.py"
+# JACCARD_SCRIPT = PROJECT_ROOT / "3-metrics" / "jaccard_similarity" / "run_jaccard_similarity.py"
 COSINE_SCRIPT = PROJECT_ROOT / "3-metrics" / "cosine_similarity" / "run_cosine_similarity.py"
 
 DEFINE_PREDICATES_SCRIPT = PROJECT_ROOT / "3-metrics" / "first_order_logic" / "01_define_predicate_schema.py"
@@ -197,20 +197,20 @@ def main():
         # Pega o resumo dos resultados das métricas para o banco de Proveniência
 
         # ---------- JACCARD ----------
-        jaccard_summary_path = PROJECT_ROOT / "5-experiment" / "jaccard_similarity_summary_by_label.csv"
-        if jaccard_summary_path.exists():
-            jacc_df = pd.read_csv(jaccard_summary_path, index_col="label")
-            jaccard_summary = {}
-            for label in jacc_df.index:
-                row = jacc_df.loc[label]
-                jaccard_summary[label] = {
-                    "mean": float(row["mean"]),
-                    "std": float(0.0 if pd.isna(row["std"]) else row["std"]),
-                    "count": int(row["count"]),
-                }
-        else:
-            jaccard_summary = None
-            print(f"⚠️ Jaccard summary CSV não encontrado em {jaccard_summary_path}")
+        # jaccard_summary_path = PROJECT_ROOT / "5-experiment" / "jaccard_similarity_summary_by_label.csv"
+        # if jaccard_summary_path.exists():
+        #     jacc_df = pd.read_csv(jaccard_summary_path, index_col="label")
+        #     jaccard_summary = {}
+        #     for label in jacc_df.index:
+        #         row = jacc_df.loc[label]
+        #         jaccard_summary[label] = {
+        #             "mean": float(row["mean"]),
+        #             "std": float(0.0 if pd.isna(row["std"]) else row["std"]),
+        #             "count": int(row["count"]),
+        #         }
+        # else:
+        #     jaccard_summary = None
+        #     print(f"⚠️ Jaccard summary CSV não encontrado em {jaccard_summary_path}")
 
         # ---------- COSINE ----------
         cosine_summary_path = PROJECT_ROOT / "5-experiment" / "cosine_similarity_summary_by_label.csv"
@@ -309,7 +309,7 @@ def main():
         # ---------- Atualizar experimento ----------
         prov.update_experiment_summaries(
             experiment_id=experiment_id,
-            jaccard_summary=jaccard_summary,
+            # jaccard_summary=jaccard_summary,
             cosine_summary=cosine_summary,
             logic_summary=logic_summary,
         )
@@ -317,7 +317,7 @@ def main():
 
         print("📊 Overview de métricas salvo na tabela experiment.")
 
-        run_script(ANALYSIS_SCRIPT)
+        # run_script(ANALYSIS_SCRIPT)
     
     else:
         print("\n ❌ Explainability dataset is not validy, delete and try generating a new one")

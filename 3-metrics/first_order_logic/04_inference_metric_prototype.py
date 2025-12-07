@@ -3,7 +3,6 @@ from pathlib import Path
 from typing import Dict, List, Tuple, Set, Any
 
 import pandas as pd
-from pathlib import Path
 import os
 import sys
 
@@ -13,7 +12,7 @@ PROJECT_ROOT = THIS_FILE.parents[2]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.append(str(PROJECT_ROOT))
 
-from provenance import ProvenanceDB  # noqa: E402
+# from provenance import ProvenanceDB  # ← removido por enquanto
 
 # ================== CONFIGURAÇÕES ==================
 
@@ -23,7 +22,7 @@ RULES_FILE = PROJECT_ROOT / "3-metrics" / "first_order_logic" / "logical_rules.j
 # Arquivo gerado pelo 03_extract_facts_llm.py
 FACTS_JSONL = PROJECT_ROOT / "3-metrics" / "first_order_logic" / "facts_extracted_llm.jsonl"
 
-# Arquivo de saída com métricas por explicação
+# Arquivo de saída com resultados por explicação
 OUTPUT_CSV = "logical_metrics_results.csv"
 SUMMARY_OUT = "logical_metrics_summary_results.csv"
 
@@ -35,6 +34,11 @@ Fact = Tuple[str, Tuple[str, ...]]
 RELEVANT_PREDICATES = None
 # Exemplo se quiser restringir:
 # RELEVANT_PREDICATES = ["located_in", "type_of", "member_of", "founder_of"]
+
+# Limiares para classificação lógica baseados em cobertura de fatos
+THRESH_CORRECT = 0.8      # coverage >= 0.8 -> correct
+THRESH_INCOMPLETE = 0.3   # 0.3 <= coverage < 0.8 -> incomplete
+# coverage < 0.3 -> incorrect
 
 # ===================================================
 
@@ -188,23 +192,25 @@ def forward_chaining(facts: Set[Fact], rules: List[Dict]) -> Set[Fact]:
     return closure
 
 
-# ========== CÁLCULO DAS MÉTRICAS LÓGICAS ==========
+# ========== "MÉTRICA" LÓGICA COMO EVIDÊNCIA =========
 
-def logical_metrics(
+def logical_evidence(
     chunk_facts: Set[Fact],
     expl_facts: Set[Fact],
     rules: List[Dict],
     relevant_predicates: List[str] | None = None,
-) -> Dict:
+) -> Dict[str, Any]:
     """
-    Calcula TP, FP, FN, precision, recall, F1 a partir de:
+    Calcula evidências lógicas a partir de:
     - fatos do chunk,
     - fatos da explicação,
     - regras lógicas.
 
-    relevant_predicates:
-      Se None, considera todos os predicados no closure do chunk como relevantes.
-      Caso contrário, considera apenas fatos cujo predicado esteja nessa lista.
+    Retorna:
+    - closure_chunk: fatos inferidos a partir do chunk
+    - relevant_closure: subconjunto de closure_chunk considerado relevante
+    - intersection: fatos da explicação que batem com o closure relevante
+    - coverage: proporção de fatos relevantes do chunk que a explicação cobre
     """
     closure_chunk = forward_chaining(chunk_facts, rules)
 
@@ -215,28 +221,31 @@ def logical_metrics(
             f for f in closure_chunk if f[0] in relevant_predicates
         }
 
-    TP = expl_facts & relevant_closure
-    FP = expl_facts - relevant_closure
-    FN = relevant_closure - expl_facts
+    intersection = expl_facts & relevant_closure
 
-    tp = len(TP)
-    fp = len(FP)
-    fn = len(FN)
-
-    precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
-    recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
-    f1 = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0.0
+    denom = len(relevant_closure) if len(relevant_closure) > 0 else 1
+    coverage = len(intersection) / denom
 
     return {
-        "TP": TP,
-        "FP": FP,
-        "FN": FN,
-        "precision": precision,
-        "recall": recall,
-        "f1": f1,
         "closure_chunk": closure_chunk,
         "relevant_closure": relevant_closure,
+        "intersection": intersection,
+        "coverage": coverage,
     }
+
+
+def classify_logical(evidence: Dict[str, Any]) -> str:
+    """
+    Usa a cobertura lógica (coverage) como medida de completude e
+    devolve um rótulo: correct / incomplete / incorrect.
+    """
+    coverage = evidence.get("coverage", 0.0)
+    if coverage >= THRESH_CORRECT:
+        return "correct"
+    elif coverage >= THRESH_INCOMPLETE:
+        return "incomplete"
+    else:
+        return "incorrect"
 
 
 # ===================== MAIN =====================
@@ -256,7 +265,6 @@ def main():
     results_rows = []
 
     with open(FACTS_JSONL, "r", encoding="utf-8") as f_in:
-        inserted = 0
         for line_idx, line in enumerate(f_in, start=1):
             line = line.strip()
             if not line:
@@ -277,12 +285,8 @@ def main():
                         "explanation_label": expl_label,
                         "num_chunk_facts": 0,
                         "num_expl_facts": 0,
-                        "tp": 0,
-                        "fp": 0,
-                        "fn": 0,
-                        "precision": 0.0,
-                        "recall": 0.0,
-                        "f1": 0.0,
+                        "coverage": 0.0,
+                        "logic_label": "unknown",
                     }
                 )
                 continue
@@ -290,86 +294,68 @@ def main():
             chunk_facts = facts_from_dict_list(chunk_facts_dicts)
             expl_facts = facts_from_dict_list(expl_facts_dicts)
 
-            metrics = logical_metrics(
+            evidence = logical_evidence(
                 chunk_facts,
                 expl_facts,
                 rules,
                 relevant_predicates=RELEVANT_PREDICATES,
             )
 
+            logic_label = classify_logical(evidence)
+
             results_rows.append(
                 {
                     "id": ex_id,
-                    "explanation_label": expl_label,
+                    "explanation_label": expl_label,   # label do dataset
                     "num_chunk_facts": len(chunk_facts),
                     "num_expl_facts": len(expl_facts),
-                    "tp": len(metrics["TP"]),
-                    "fp": len(metrics["FP"]),
-                    "fn": len(metrics["FN"]),
-                    "precision": metrics["precision"],
-                    "recall": metrics["recall"],
-                    "f1": metrics["f1"],
+                    "coverage": evidence["coverage"],
+                    "logic_label": logic_label,
                 }
             )
 
             print(f"   Processed {line_idx} explanations...")
 
-            # --- LÊ VARIÁVEIS DE AMBIENTE ---
-
-            experiment_id_env = os.getenv("EXPERIMENT_ID")
-            logic_metric_id_env = os.getenv("LOGIC_METRIC_ID")
-            logic_trial_env = os.getenv("LOGIC_TRIAL_NUMBER")
-
-            if not (experiment_id_env and logic_metric_id_env and logic_trial_env):
-                print("⚠️ EXPERIMENT_ID / LOGIC_METRIC_ID / LOGIC_TRIAL_NUMBER não encontrados. Pulando registro em logic_result.")
-                return
-
-            experiment_id = int(experiment_id_env)
-            logic_metric_id = int(logic_metric_id_env)
-            trial_number = int(logic_trial_env)
-
-            prov = ProvenanceDB()
-            metadata = {
-                "relevant_predicates": RELEVANT_PREDICATES
-            }
-
-            facts = {
-                "chunk_facts": list(chunk_facts),
-                "explanation_facts": list(expl_facts),
-            }
-            print("==================")
-
-            prov.insert_logic_result(
-                experiment_id=experiment_id,
-                logic_metric_id=logic_metric_id,
-                trial_number=trial_number,
-                sample_id=ex_id,
-                label=expl_label,
-                precision_result=metrics["precision"],
-                recall_result=metrics["recall"],
-                f1_result=metrics["f1"],
-                facts=facts,
-                metadata=metadata,
-            )
-            inserted += 1
-
-            prov.close()
-            print(f"🧠 logic_result: {inserted} linhas inseridas para trial={trial_number}")
-
+            # 🔇 Proveniência removida desta versão para simplificar a métrica
+            # Se quiser, depois ajustamos ProvenanceDB para registrar:
+            # - coverage
+            # - logic_label
+            # - closure_chunk / intersection, etc.
 
     # Converte para DataFrame e salva CSV
     df = pd.DataFrame(results_rows)
-    # OUTPUT_CSV.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(OUTPUT_CSV, index=False)
-    print(f"\n✅ Logical metrics saved to: {OUTPUT_CSV}")
+    print(f"\n✅ Logical classification saved to: {OUTPUT_CSV}")
 
-    # Resumo por label
+        # ===================== CONFUSION MATRIX =====================
     if not df.empty:
-        print("\n📊 Summary by explanation_label:")
-        # summary = df.groupby("explanation_label")[["precision", "recall", "f1"]].mean()
-        summary = df.groupby("explanation_label")["f1"].agg(["mean", "std", "count"])
-        summary.to_csv(SUMMARY_OUT)
-        print(summary.to_string(float_format=lambda x: f"{x:.3f}"))
+        print("\n📊 Confusion between dataset label (TRUE) and logic_label (PREDICTED):")
+
+        # matriz padrão
+        confusion = pd.crosstab(df["explanation_label"], df["logic_label"])
+        print(confusion)
+
+        # salva matriz tradicional
+        confusion.to_csv(SUMMARY_OUT)
+        print(f"📁 Confusion matrix saved to: {SUMMARY_OUT}")
+
+        # ----- versão “long format” muito mais clara -----
+        long_rows = []
+        for true_label in confusion.index:
+            for pred_label in confusion.columns:
+                count = confusion.loc[true_label, pred_label]
+                long_rows.append({
+                    "true_label": true_label,
+                    "pred_label": pred_label,
+                    "count": int(count)
+                })
+
+        long_df = pd.DataFrame(long_rows)
+
+        LONG_SUMMARY = "logical_metrics_summary_long.csv"
+        long_df.to_csv(LONG_SUMMARY, index=False)
+        print(f"📁 Long-format confusion saved to: {LONG_SUMMARY}")
+
 
 
 if __name__ == "__main__":
