@@ -1,4 +1,3 @@
-import glob
 from pathlib import Path
 import os
 
@@ -8,338 +7,330 @@ import pandas as pd
 # ===================== CONFIG =====================
 
 THIS_FILE = Path(__file__).resolve()
-PROJECT_ROOT = THIS_FILE.parent.parent  # sobe de 5-experiment/ para a raiz do projeto
+PROJECT_ROOT = THIS_FILE.parent.parent  # sobe até a raiz do projeto
 
-# Cosine
-COSINE_RESULTS = PROJECT_ROOT / "5-experiment" / "cosine_similarity_results.csv"
-COSINE_SUMMARY = PROJECT_ROOT / "5-experiment" / "cosine_similarity_summary_by_label.csv"
+# Arquivos de entrada
+COSINE_RESULTS = PROJECT_ROOT / "3-metrics" / "cosine_similarity" / "cosine_similarity_results.csv"
+LOGIC_SUMMARY_LONG = PROJECT_ROOT / "3-metrics" / "first_order_logic" / "logical_metrics_summary_long.csv"
+LLM_JUDGE_SUMMARY = PROJECT_ROOT / "3-metrics" / "llm_judge" / "llm_judge_summary.csv"
 
-# Jaccard
-JACCARD_RESULTS = PROJECT_ROOT / "5-experiment" / "jaccard_similarity_results.csv"
-JACCARD_SUMMARY = PROJECT_ROOT / "5-experiment" / "jaccard_similarity_summary_by_label.csv"
+# Identificador do experimento (apenas para nomear figuras/tabelas)
+EXPERIMENT_ID = os.getenv("EXPERIMENT_ID") or "noid"
 
-# Logic (vários trials) - summary por trial
-LOGIC_SUMMARY_PATTERN = str(
-    PROJECT_ROOT
-    / "5-experiment"
-    / "logical_summary_results_trials_out"
-    / "logical_metrics_summary_results_trial*.csv"
-)
-
-# Output
-EXPERIMENT_ID = str(os.getenv("EXPERIMENT_ID"))
+# Saídas
 FIGURES_DIR = THIS_FILE.parent / "figures" / EXPERIMENT_ID
-OUTPUT_TABLE = THIS_FILE.parent / "table" / EXPERIMENT_ID
+TABLES_DIR = THIS_FILE.parent / "tables" / EXPERIMENT_ID
 
-
+# Labels padrão (para ordenar e garantir consistência)
+LABELS = ["correct", "incomplete", "incorrect"]
 
 # ==================================================
 
 
-def ensure_figures_dir():
+def ensure_dirs():
     FIGURES_DIR.mkdir(parents=True, exist_ok=True)
-
-def ensure_table_dir():
-    OUTPUT_TABLE.mkdir(parents=True, exist_ok=True)
+    TABLES_DIR.mkdir(parents=True, exist_ok=True)
 
 
-# ------------ LOADERS DE SUMMARY ------------
+# ===================== COSINE SIMILARITY =====================
 
-def load_cosine_summary() -> pd.DataFrame:
+def load_cosine_results() -> pd.DataFrame:
     """
-    Lê cosine_similarity_summary_by_label.csv
-    Formato esperado: label,mean,std,count
+    Lê cosine_similarity_results.csv
+    Formato esperado: dataset_id,label,chunk_text,explanation_text,cosine_similarity
     """
-    if not COSINE_SUMMARY.exists():
-        print(f"⚠️ No cosine summary at {COSINE_SUMMARY}")
+    if not COSINE_RESULTS.exists():
+        print(f"⚠️ Cosine results not found at {COSINE_RESULTS}")
         return pd.DataFrame()
-
-    df = pd.read_csv(COSINE_SUMMARY)
-    df["metric"] = "cosine_similarity"
-    # Garantir colunas na ordem padrão
-    return df[["metric", "label", "mean", "std", "count"]]
+    df = pd.read_csv(COSINE_RESULTS)
+    return df
 
 
-def load_jaccard_summary() -> pd.DataFrame:
+def plot_cosine_boxplot(df: pd.DataFrame):
     """
-    Lê jaccard_similarity_summary_by_label.csv
-    Formato esperado: label,mean,std,count
+    Boxplot da distribuição de cosine_similarity por label.
+    Dá uma visão geral de como a similaridade se comporta por tipo de explicação.
     """
-    if not JACCARD_SUMMARY.exists():
-        print(f"⚠️ No jaccard summary at {JACCARD_SUMMARY}")
-        return pd.DataFrame()
-
-    df = pd.read_csv(JACCARD_SUMMARY)
-    df["metric"] = "jaccard_similarity"
-    return df[["metric", "label", "mean", "std", "count"]]
-
-
-def load_logic_summary() -> pd.DataFrame:
-    """
-    Lê TODOS os logical_metrics_summary_results_trial*.csv e
-    agrega entre trials.
-
-    Formato de cada arquivo:
-      explanation_label,mean,std,count
-
-    Aqui:
-      - mean = F1 médio daquele trial para aquele label
-      - std e count são internos ao trial (não usamos diretamente)
-    """
-    files = sorted(glob.glob(LOGIC_SUMMARY_PATTERN))
-    if not files:
-        print(f"⚠️ No logical summary trial files found with pattern: {LOGIC_SUMMARY_PATTERN}")
-        return pd.DataFrame()
-
-    dfs = []
-    for f in files:
-        df = pd.read_csv(f)
-        df["trial"] = Path(f).stem 
-        dfs.append(df)
-
-    df_all = pd.concat(dfs, ignore_index=True)
-
-    grouped = (
-        df_all
-        .groupby("explanation_label")
-        .agg(
-            {
-                "mean": "mean",
-                "std": "mean",
-                "count": "mean"
-            }
-        )
-        .reset_index()
-        .rename(columns={"explanation_label": "label"})
-    )
-
-    grouped["metric"] = "logic_f1"
-    return grouped[["metric", "label", "mean", "std", "count"]]
-
-
-# ------------ PLOTS ------------
-
-def plot_bar(summary: pd.DataFrame, metric_name: str, file_name: str):
-    """
-    summary: DataFrame com colunas [label, mean, std]
-    """
-    if summary.empty:
+    if df.empty:
+        print("⚠️ Empty cosine DataFrame, skipping cosine boxplot.")
         return
 
-    labels = summary["label"].tolist()
-    means = summary["mean"].tolist()
-    stds = summary["std"].tolist()
+    if "label" not in df.columns or "cosine_similarity" not in df.columns:
+        print("⚠️ Columns 'label' or 'cosine_similarity' not found in cosine results.")
+        return
+
+    labels_present = sorted(df["label"].unique())
+    data = [df[df["label"] == lab]["cosine_similarity"].dropna().values for lab in labels_present]
+
+    plt.figure()
+    plt.boxplot(data, labels=labels_present)
+    plt.ylabel("Cosine similarity")
+    plt.title(f"Cosine similarity distribution by label (Exp: {EXPERIMENT_ID})")
+    plt.tight_layout()
+
+    out = FIGURES_DIR / f"cosine_boxplot_ex{EXPERIMENT_ID}.png"
+    plt.savefig(out, dpi=300)
+    plt.close()
+    print(f"✅ Saved cosine boxplot: {out}")
+
+
+# ===================== CONFUSÃO E ACURÁCIA (MÉTRICA GERAL) =====================
+
+def load_confusion_long(path: Path) -> pd.DataFrame:
+    """
+    Lê um CSV no formato "long":
+      true_label,pred_label,count
+
+    Retorna:
+      - DataFrame long
+    """
+    if not path.exists():
+        print(f"⚠️ Confusion-long CSV not found at {path}")
+        return pd.DataFrame()
+    df = pd.read_csv(path)
+    expected_cols = {"true_label", "pred_label", "count"}
+    if not expected_cols.issubset(df.columns):
+        print(f"⚠️ Missing columns in {path}: expected {expected_cols}, got {set(df.columns)}")
+        return pd.DataFrame()
+    return df
+
+
+def pivot_confusion(df_long: pd.DataFrame) -> pd.DataFrame:
+    """
+    Recebe um DF long (true_label, pred_label, count)
+    e devolve uma matriz (wide) com:
+      - index = true_label
+      - columns = pred_label
+    Garantindo presença de LABELS nas linhas/colunas (preenchendo com 0).
+    """
+    if df_long.empty:
+        return pd.DataFrame()
+
+    conf = df_long.pivot(
+        index="true_label",
+        columns="pred_label",
+        values="count",
+    )
+
+    # garante as labels padrão (se existirem outras, mantemos também)
+    all_rows = sorted(set(conf.index).union(LABELS))
+    all_cols = sorted(set(conf.columns).union(LABELS))
+
+    conf = conf.reindex(index=all_rows, columns=all_cols, fill_value=0)
+
+    # restringe às 3 labels de interesse, se estiverem presentes
+    conf = conf.reindex(index=LABELS, columns=LABELS, fill_value=0)
+
+    return conf
+
+
+def plot_confusion_matrix(confusion_df: pd.DataFrame, title: str, out_path: Path):
+    """
+    Plota matriz de confusão usando apenas matplotlib.
+
+    confusion_df deve ter:
+      - index: true labels
+      - columns: predicted labels
+    """
+    if confusion_df.empty:
+        print("⚠️ Empty confusion matrix, skipping plot.")
+        return
+
+    true_labels = confusion_df.index.tolist()
+    pred_labels = confusion_df.columns.tolist()
+    matrix = confusion_df.values
+
+    plt.figure(figsize=(6, 5))
+    plt.imshow(matrix)  # sem cmap explícito (usa padrão)
+    plt.colorbar()
+    plt.xticks(range(len(pred_labels)), pred_labels, rotation=45, ha="right")
+    plt.yticks(range(len(true_labels)), true_labels)
+    plt.xlabel("Predicted label")
+    plt.ylabel("True label")
+    plt.title(title)
+
+    # valores nas células
+    for i in range(matrix.shape[0]):
+        for j in range(matrix.shape[1]):
+            val = int(matrix[i, j])
+            plt.text(j, i, str(val), ha="center", va="center")
+
+    plt.tight_layout()
+    plt.savefig(out_path, dpi=300)
+    plt.close()
+    print(f"✅ Saved confusion matrix plot: {out_path}")
+
+
+def compute_accuracy_by_label(confusion_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    A partir da matriz de confusão (true x pred), calcula acurácia por label:
+
+      accuracy(label) = conf[label,label] / sum(conf[label,*])
+
+    Retorna DF com colunas: label, accuracy, total
+    """
+    rows = []
+    for lab in LABELS:
+        if lab not in confusion_df.index:
+            rows.append({"label": lab, "accuracy": 0.0, "total": 0})
+            continue
+        row = confusion_df.loc[lab]
+        total = row.sum()
+        hit = row.get(lab, 0)
+        acc = float(hit) / float(total) if total > 0 else 0.0
+        rows.append({"label": lab, "accuracy": acc, "total": int(total)})
+
+    return pd.DataFrame(rows)
+
+
+def plot_accuracy_bar(acc_df: pd.DataFrame, title: str, out_path: Path):
+    """
+    Gráfico de barras da acurácia por label.
+    """
+    if acc_df.empty:
+        print("⚠️ Empty accuracy DataFrame, skipping plot.")
+        return
+
+    labels = acc_df["label"].tolist()
+    values = acc_df["accuracy"].tolist()
 
     x = range(len(labels))
     plt.figure()
-    plt.bar(x, means, yerr=stds, capsize=5)
+    plt.bar(x, values)
     plt.xticks(x, labels)
-    plt.ylabel(metric_name)
-    plt.title(f"{metric_name} by label")
-    plt.tight_layout()
-
-    out = FIGURES_DIR / file_name
-    plt.savefig(out, dpi=300)
-    plt.close()
-    print(f"Saved: {out}")
-
-
-def plot_box(results_path: Path, value_col: str, label_col: str, title: str, file_name: str):
-    """
-    Boxplot da distribuição dos valores por label
-    (usado para cosine/jaccard que têm CSV 'completo').
-    """
-    if not results_path.exists():
-        print(f"⚠️ Results file not found at {results_path}, skipping {file_name}.")
-        return
-
-    df = pd.read_csv(results_path)
-    if value_col not in df.columns or label_col not in df.columns:
-        print(f"⚠️ Columns {value_col} or {label_col} not in {results_path.name}, skipping {file_name}.")
-        return
-
-    labels = sorted(df[label_col].unique())
-    data = [df[df[label_col] == lab][value_col].dropna().values for lab in labels]
-
-    plt.figure()
-    plt.boxplot(data, labels=labels)
-    plt.ylabel(value_col)
+    plt.ylim(0, 1)
+    plt.ylabel("Accuracy")
     plt.title(title)
     plt.tight_layout()
 
-    out = FIGURES_DIR / file_name
-    plt.savefig(out, dpi=300)
+    plt.savefig(out_path, dpi=300)
     plt.close()
-    print(f"Saved: {out}")
+    print(f"✅ Saved accuracy barplot: {out_path}")
 
-def plot_metric_comparison_per_label(wide_df: pd.DataFrame):
+
+# ===================== LÓGICA vs LLM-JUDGE (ACURÁCIA) =====================
+
+def plot_logic_vs_judge_accuracy(logic_acc: pd.DataFrame, judge_acc: pd.DataFrame):
     """
-    Cria 3 gráficos: correct / incomplete / incorrect
-    Comparando cosine, jaccard e logic (lado a lado)
+    Compara as acurácias por label da métrica lógica e do LLM-judge
+    num gráfico de barras agrupadas.
     """
-    labels = wide_df["label"].tolist()
+    if logic_acc.empty or judge_acc.empty:
+        print("⚠️ Empty accuracy DF for logic or judge, skipping comparison plot.")
+        return
 
-    for label in labels:
-        row = wide_df[wide_df["label"] == label].iloc[0]
+    # garantir que ambas tenham as mesmas labels na mesma ordem
+    merged = pd.merge(
+        logic_acc[["label", "accuracy"]],
+        judge_acc[["label", "accuracy"]],
+        on="label",
+        how="inner",
+        suffixes=("_logic", "_judge"),
+    )
 
-        metrics = ["Cosine Similarity", "Jaccard Similarity", "Logical F1"]
-        means = [
-            row["cosine_similarity_mean"],
-            row["jaccard_similarity_mean"],
-            row["logic_f1_mean"],
-        ]
-        stds = [
-            row["cosine_similarity_std"],
-            row["jaccard_similarity_std"],
-            row["logic_f1_std"],
-        ]
+    if merged.empty:
+        print("⚠️ No overlapping labels between logic and judge accuracy.")
+        return
 
-        plt.figure(figsize=(6, 4))
-        x = range(len(metrics))
-        plt.bar(x, means, yerr=stds, capsize=6)
-        plt.xticks(x, metrics, rotation=20)
-        plt.ylabel("Score")
-        plt.ylim(0, 1)
-        plt.title(f"Metric comparison – {label}")
-        plt.tight_layout()
-
-        out = FIGURES_DIR / f"{label}_metric_comparison_ex{EXPERIMENT_ID}.png"
-        plt.savefig(out, dpi=300)
-        plt.close()
-        print(f"Saved per-label comparison: {out}")
-
-def plot_overall_metric_comparison(wide_df: pd.DataFrame):
-    """
-    Gera um único gráfico com:
-    - 3 grupos (correct, incomplete, incorrect)
-    - 3 barras por grupo (cosine, jaccard, logic)
-    """
-
-    labels = wide_df["label"].tolist()
-    metrics = ["cosine", "jaccard", "logic"]
-
-    # extrair arrays de valores
-    cosine = wide_df["cosine_similarity_mean"].tolist()
-    jaccard = wide_df["jaccard_similarity_mean"].tolist()
-    logic = wide_df["logic_f1_mean"].tolist()
+    labels = merged["label"].tolist()
+    acc_logic = merged["accuracy_logic"].tolist()
+    acc_judge = merged["accuracy_judge"].tolist()
 
     x = range(len(labels))
-    width = 0.25
+    width = 0.35
 
-    plt.figure(figsize=(9, 5))
-    plt.bar([i - width for i in x], cosine, width, label="Cosine")
-    plt.bar(x, jaccard, width, label="Jaccard")
-    plt.bar([i + width for i in x], logic, width, label="Logic F1")
+    plt.figure(figsize=(8, 5))
+    plt.bar([i - width / 2 for i in x], acc_logic, width, label="Logic metric")
+    plt.bar([i + width / 2 for i in x], acc_judge, width, label="LLM judge")
 
     plt.xticks(x, labels)
-    plt.ylabel("Score")
     plt.ylim(0, 1)
-    plt.title(f"Comparison of all metrics across labels (Exp: {EXPERIMENT_ID})")
+    plt.ylabel("Accuracy")
+    plt.title(f"Logic metric vs LLM-judge – Accuracy by label (Exp: {EXPERIMENT_ID})")
     plt.legend()
     plt.tight_layout()
 
-    out = FIGURES_DIR / f"overall_metric_comparison_ex{EXPERIMENT_ID}.png"
+    out = FIGURES_DIR / f"logic_vs_judge_accuracy_ex{EXPERIMENT_ID}.png"
     plt.savefig(out, dpi=300)
     plt.close()
-    print(f"Saved overall comparison: {out}")
+    print(f"✅ Saved logic vs judge accuracy comparison: {out}")
 
-# ------------ MAIN ------------
+
+# ===================== MAIN =====================
 
 def main():
-    print("=== Starting metrics analysis ===")
-    ensure_figures_dir()
-    ensure_table_dir()
+    print("=== Starting analysis ===")
+    ensure_dirs()
 
-    # 1) Carregar summaries
-    cosine_summary = load_cosine_summary()
-    jaccard_summary = load_jaccard_summary()
-    logic_summary = load_logic_summary()
+    # ----- 1) Cosine similarity -----
+    cosine_df = load_cosine_results()
+    if not cosine_df.empty:
+        plot_cosine_boxplot(cosine_df)
 
+    # ----- 2) Logic metric (dataset vs lógica) -----
+    logic_long = load_confusion_long(LOGIC_SUMMARY_LONG)
+    logic_conf = pivot_confusion(logic_long)
+    if not logic_conf.empty:
+        # salvar matriz wide
+        logic_conf_csv = TABLES_DIR / f"logic_confusion_ex{EXPERIMENT_ID}.csv"
+        logic_conf.to_csv(logic_conf_csv)
+        print(f"✅ Saved logic confusion matrix CSV: {logic_conf_csv}")
+        print("\n📊 Logic confusion matrix:")
+        print(logic_conf)
 
-    summaries = [s for s in [jaccard_summary, cosine_summary, logic_summary] if not s.empty]
+        # figura da matriz
+        logic_conf_fig = FIGURES_DIR / f"logic_confusion_ex{EXPERIMENT_ID}.png"
+        plot_confusion_matrix(logic_conf, "Logic metric – Confusion matrix", logic_conf_fig)
 
+        # acurácia por label
+        logic_acc_df = compute_accuracy_by_label(logic_conf)
+        logic_acc_csv = TABLES_DIR / f"logic_accuracy_by_label_ex{EXPERIMENT_ID}.csv"
+        logic_acc_df.to_csv(logic_acc_csv, index=False)
+        print("\n📈 Logic accuracy by label:")
+        print(logic_acc_df)
+        print(f"✅ Saved logic accuracy CSV: {logic_acc_csv}")
 
-    if not summaries:
-        print("⚠️ No metric summaries found, aborting analysis.")
-        return
-
-    # 2) Montar tabela comparativa geral
-    comparison = pd.concat(summaries, ignore_index=True)
-    comparison.to_csv(OUTPUT_TABLE/f"comparison_exp{EXPERIMENT_ID}", index=False)
-    print(f"\nSaved comparison table at: {OUTPUT_TABLE}")
-
-    # === Pivot para formato wide (label como linhas, métricas como colunas) ===
-
-    # Remover count
-    comparison_no_count = comparison.drop(columns=["count"])
-
-    # Criar colunas combinadas metric_mean e metric_std
-    comparison_no_count["metric_mean"] = comparison_no_count["metric"] + "_mean"
-    comparison_no_count["metric_std"]  = comparison_no_count["metric"] + "_std"
-
-    # Pivotar mean
-    mean_pivot = comparison_no_count.pivot(
-        index="label",
-        columns="metric_mean",
-        values="mean"
-    )
-
-    # Pivotar std
-    std_pivot = comparison_no_count.pivot(
-        index="label",
-        columns="metric_std",
-        values="std"
-    )
-
-    # Combinar tudo no formato solicitado
-    final_table = pd.concat([mean_pivot, std_pivot], axis=1)
-
-    # Ordenar colunas alfabeticamente (opcional)
-    final_table = final_table.reindex(sorted(final_table.columns), axis=1)
-
-    # Salvar em CSV
-    final_pivot_path = OUTPUT_TABLE / f"metrics_comparison_wide_ex{EXPERIMENT_ID}.csv"
-    final_table.to_csv(final_pivot_path)
-    print(f"\nSaved wide comparison table at: {final_pivot_path}")
-
-    print("\n=== Wide Comparison Table ===")
-    print(final_table)
-
-    # 3) Gráficos de barras
-    if not jaccard_summary.empty:
-        plot_bar(jaccard_summary, "Jaccard Similarity", f"jaccard_by_label_bar_ex{EXPERIMENT_ID}.png")
-
-    if not cosine_summary.empty:
-        plot_bar(cosine_summary, "Cosine Similarity", f"cosine_by_label_bar_ex{EXPERIMENT_ID}.png")
-
-    if not logic_summary.empty:
-        plot_bar(logic_summary, "Logical F1 (across trials)", f"logic_f1_by_label_bar_ex{EXPERIMENT_ID}.png")
-
-    # 4) Boxplots (usando resultados completos para cosine/jaccard)
-    if JACCARD_RESULTS.exists():
-        plot_box(
-            JACCARD_RESULTS,
-            value_col="jaccard_similarity",
-            label_col="label",
-            title=f"Jaccard similarity distribution by label (Exp: {EXPERIMENT_ID})",
-            file_name=f"jaccard_boxplot_ex{EXPERIMENT_ID}.png",
+        logic_acc_fig = FIGURES_DIR / f"logic_accuracy_by_label_ex{EXPERIMENT_ID}.png"
+        plot_accuracy_bar(
+            logic_acc_df,
+            f"Logic metric – Accuracy by label (Exp: {EXPERIMENT_ID})",
+            logic_acc_fig,
         )
+    else:
+        logic_acc_df = pd.DataFrame()
 
-    if COSINE_RESULTS.exists():
-        plot_box(
-            COSINE_RESULTS,
-            value_col="cosine_similarity",
-            label_col="label",
-            title=f"Cosine similarity distribution by label (Exp: {EXPERIMENT_ID})",
-            file_name=f"cosine_boxplot_ex{EXPERIMENT_ID}.png",
+    # ----- 3) LLM-judge (dataset vs juiz) -----
+    judge_long = load_confusion_long(LLM_JUDGE_SUMMARY)
+    judge_conf = pivot_confusion(judge_long)
+    if not judge_conf.empty:
+        judge_conf_csv = TABLES_DIR / f"llm_judge_confusion_ex{EXPERIMENT_ID}.csv"
+        judge_conf.to_csv(judge_conf_csv)
+        print(f"\n✅ Saved LLM judge confusion matrix CSV: {judge_conf_csv}")
+        print("\n📊 LLM judge confusion matrix:")
+        print(judge_conf)
+
+        judge_conf_fig = FIGURES_DIR / f"llm_judge_confusion_ex{EXPERIMENT_ID}.png"
+        plot_confusion_matrix(judge_conf, "LLM-judge – Confusion matrix", judge_conf_fig)
+
+        judge_acc_df = compute_accuracy_by_label(judge_conf)
+        judge_acc_csv = TABLES_DIR / f"llm_judge_accuracy_by_label_ex{EXPERIMENT_ID}.csv"
+        judge_acc_df.to_csv(judge_acc_csv, index=False)
+        print("\n📈 LLM judge accuracy by label:")
+        print(judge_acc_df)
+        print(f"✅ Saved LLM judge accuracy CSV: {judge_acc_csv}")
+
+        judge_acc_fig = FIGURES_DIR / f"llm_judge_accuracy_by_label_ex{EXPERIMENT_ID}.png"
+        plot_accuracy_bar(
+            judge_acc_df,
+            f"LLM-judge – Accuracy by label (Exp: {EXPERIMENT_ID})",
+            judge_acc_fig,
         )
+    else:
+        judge_acc_df = pd.DataFrame()
 
-    # 5) Gráfico de comparação geral
-    wide_path = OUTPUT_TABLE / f"metrics_comparison_wide_ex{EXPERIMENT_ID}.csv"
-    wide_df = pd.read_csv(wide_path)
-
-    plot_metric_comparison_per_label(wide_df)
-    plot_overall_metric_comparison(wide_df)
+    # ----- 4) Comparação lógica vs LLM-judge -----
+    if not logic_acc_df.empty and not judge_acc_df.empty:
+        plot_logic_vs_judge_accuracy(logic_acc_df, judge_acc_df)
 
     print("\n✅ Analysis completed!")
 

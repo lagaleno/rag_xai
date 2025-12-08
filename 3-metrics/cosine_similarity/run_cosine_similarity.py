@@ -28,8 +28,8 @@ PROJECT_ROOT = THIS_FILE.parents[2]
 JSONL_FILE = PROJECT_ROOT / "1-creating_dataset" / "explainrag_hotpot_llama.jsonl"
 
 # Saídas
-CSV_OUT = "cosine_similarity_results.csv"
-SUMMARY_OUT = "cosine_similarity_summary_by_label.csv"
+CSV_OUT = PROJECT_ROOT / "3-metrics" / "cosine_similarity" / "cosine_similarity_results.csv"
+SUMMARY_OUT = PROJECT_ROOT / "3-metrics" / "cosine_similarity" / "cosine_similarity_summary_by_label.csv"
 
 # Modelo de embeddings
 EMBEDDING_MODEL = "all-MiniLM-L6-v2"

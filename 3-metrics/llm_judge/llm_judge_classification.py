@@ -25,6 +25,8 @@ DATASET_JSONL = PROJECT_ROOT / "1-creating_dataset" / "explainrag_hotpot_llama.j
 JUDGE_OUTPUT_CSV = PROJECT_ROOT / "3-metrics" / "llm_judge" / "llm_judge_labels.csv"
 JUDGE_SUMMARY_OUTPUT_CSV = PROJECT_ROOT / "3-metrics" / "llm_judge" / "llm_judge_summary.csv"
 
+JUDGE_MATRIX_CSV = PROJECT_ROOT / "3-metrics" / "llm_judge" / "llm_judge_confusion_matrix.csv"
+
 # Modelo do LLM que atuará como juiz 
 # Exemplo: se você usou "llama3" para gerar explicações, aqui pode usar outro,
 # ou uma variante com mais parâmetros.
@@ -249,7 +251,29 @@ def main():
     print("\n📊 Confusion matrix: dataset label (rows) vs judge_label (cols):")
     confusion = pd.crosstab(out_df["explanation_label"], out_df["judge_label"])
     print(confusion)
-    confusion.to_csv(JUDGE_SUMMARY_OUTPUT_CSV)
+
+    # 1) Salvar a matriz "largona" como está 
+    
+    confusion.to_csv(JUDGE_MATRIX_CSV)
+    print(f"✅ Saved judge confusion matrix (wide) to: {JUDGE_MATRIX_CSV}")
+
+    # 2) Gerar versão "long" com true_label, pred_label, count
+    confusion_long = (
+        confusion
+        .reset_index()  # traz explanation_label para coluna
+        .melt(
+            id_vars="explanation_label",      # coluna que fica fixa (true)
+            var_name="judge_label",           # nome da coluna das categorias preditas
+            value_name="count"                # nome da coluna de contagem
+        )
+        .rename(columns={
+            "explanation_label": "true_label",
+            "judge_label": "pred_label",
+        })
+    )
+
+    confusion_long.to_csv(JUDGE_SUMMARY_OUTPUT_CSV, index=False)
+    print(f"✅ Saved judge confusion matrix (long) to: {JUDGE_SUMMARY_OUTPUT_CSV}")
 
 
 if __name__ == "__main__":
