@@ -5,7 +5,7 @@
       "args": [
         "entity_type"
       ],
-      "description": "Identifies an entity in the factoid.",
+      "description": "Identifies an entity in the factoid",
       "usage_count": 4
     },
     {
@@ -13,7 +13,7 @@
       "args": [
         "person_type"
       ],
-      "description": "Identifies a person in the factoid.",
+      "description": "Identifies a person in the factoid",
       "usage_count": 4
     },
     {
@@ -21,7 +21,7 @@
       "args": [
         "work_type"
       ],
-      "description": "Identifies a work (e.g. book, movie) in the factoid.",
+      "description": "Identifies a work (e.g. book, movie) in the factoid",
       "usage_count": 4
     },
     {
@@ -29,24 +29,24 @@
       "args": [
         "organization_type"
       ],
-      "description": "Identifies an organization in the factoid.",
-      "usage_count": 2
+      "description": "Identifies an organization in the factoid",
+      "usage_count": 4
     },
     {
       "name": "Location",
       "args": [
         "location_type"
       ],
-      "description": "Identifies a location (e.g. place, city) in the factoid.",
-      "usage_count": 1
+      "description": "Identifies a location (e.g. place, city) in the factoid",
+      "usage_count": 3
     },
     {
       "name": "Date",
       "args": [
         "date_type"
       ],
-      "description": "Identifies a date or time period in the factoid.",
-      "usage_count": 3
+      "description": "Identifies a date or time period in the factoid",
+      "usage_count": 4
     },
     {
       "name": "Relationship",
@@ -55,47 +55,7 @@
         "entity1_type",
         "entity2_type"
       ],
-      "description": "Describes a relationship between two entities in the factoid.",
-      "usage_count": 1
-    },
-    {
-      "name": "Place",
-      "args": [
-        "place_type"
-      ],
-      "description": "Identifies a location mentioned in the factoid.",
-      "usage_count": 1
-    },
-    {
-      "name": "Type",
-      "args": [
-        "type_type"
-      ],
-      "description": "Classifies a concept or category mentioned in the factoid.",
-      "usage_count": 2
-    },
-    {
-      "name": "Organization",
-      "args": [
-        "org_type"
-      ],
-      "description": "Identifies an organization or institution.",
-      "usage_count": 2
-    },
-    {
-      "name": "Type",
-      "args": [
-        "type_label"
-      ],
-      "description": "A category or classification for something.",
-      "usage_count": 1
-    },
-    {
-      "name": "Date",
-      "args": [
-        "date_format"
-      ],
-      "description": "A specific point in time, such as a birthday or release date.",
+      "description": "Describes a relationship between two entities",
       "usage_count": 1
     },
     {
@@ -103,70 +63,91 @@
       "args": [
         "type"
       ],
-      "description": "A named entity in the text.",
-      "usage_count": 3
-    },
-    {
-      "name": "Person",
-      "args": [
-        "entity",
-        "type"
-      ],
-      "description": "A person mentioned in the text, possibly with additional information about their type or role.",
-      "usage_count": 1
-    },
-    {
-      "name": "Location",
-      "args": [
-        "entity",
-        "type"
-      ],
-      "description": "A location mentioned in the text, possibly with additional information about its type or significance.",
-      "usage_count": 1
-    },
-    {
-      "name": "Work",
-      "args": [
-        "entity",
-        "type"
-      ],
-      "description": "A creative work (e.g. book, movie, song) mentioned in the text, possibly with additional information about its type or significance.",
-      "usage_count": 1
-    },
-    {
-      "name": "Organization",
-      "args": [
-        "entity",
-        "type"
-      ],
-      "description": "An organization mentioned in the text, possibly with additional information about its type or role.",
-      "usage_count": 1
-    },
-    {
-      "name": "Event",
-      "args": [
-        "date",
-        "type"
-      ],
-      "description": "A specific event or occurrence mentioned in the text, possibly with additional information about its date and significance.",
-      "usage_count": 1
-    },
-    {
-      "name": "Attribute",
-      "args": [
-        "entity",
-        "attribute_type"
-      ],
-      "description": "An attribute or characteristic of an entity mentioned in the text.",
-      "usage_count": 1
+      "description": "An entity is a thing that exists or happens.",
+      "usage_count": 4
     },
     {
       "name": "Person",
       "args": [
         "entity"
       ],
-      "description": "A human being",
+      "description": "A person is an individual human being.",
       "usage_count": 2
+    },
+    {
+      "name": "Place",
+      "args": [
+        "entity"
+      ],
+      "description": "A place is a location or region.",
+      "usage_count": 1
+    },
+    {
+      "name": "Work",
+      "args": [
+        "entity"
+      ],
+      "description": "A work is a creative or intellectual product.",
+      "usage_count": 1
+    },
+    {
+      "name": "Organization",
+      "args": [
+        "entity"
+      ],
+      "description": "An organization is a group of people with a common goal.",
+      "usage_count": 1
+    },
+    {
+      "name": "Type",
+      "args": [
+        "category"
+      ],
+      "description": "A type is a category or classification.",
+      "usage_count": 3
+    },
+    {
+      "name": "Date",
+      "args": [
+        "datetime"
+      ],
+      "description": "A date is a specific point in time.",
+      "usage_count": 1
+    },
+    {
+      "name": "Relationship",
+      "args": [
+        "relationship_type",
+        "entity_type"
+      ],
+      "description": "Describes a relationship between entities in the factoid",
+      "usage_count": 1
+    },
+    {
+      "name": "Type",
+      "args": [
+        "type_type"
+      ],
+      "description": "A type or category mentioned in the text.",
+      "usage_count": 2
+    },
+    {
+      "name": "Person",
+      "args": [
+        "type",
+        "nationality"
+      ],
+      "description": "Identifies a person mentioned in the passage, including their nationality.",
+      "usage_count": 2
+    },
+    {
+      "name": "Location",
+      "args": [
+        "type",
+        "location"
+      ],
+      "description": "Identifies a location mentioned in the passage, including its type (e.g., city, country).",
+      "usage_count": 1
     },
     {
       "name": "Work",
@@ -174,24 +155,57 @@
         "title",
         "author"
       ],
-      "description": "A creative work, such as a book, song, or movie",
+      "description": "Identifies a work (book, article, etc.) mentioned in the passage, including its title and author.",
       "usage_count": 2
     },
     {
       "name": "Organization",
       "args": [
-        "name"
+        "type"
       ],
-      "description": "A group of people with a shared purpose",
-      "usage_count": 2
+      "description": "Identifies an organization mentioned in the passage, including its type (e.g., government agency, company).",
+      "usage_count": 1
+    },
+    {
+      "name": "Event",
+      "args": [
+        "date",
+        "location"
+      ],
+      "description": "Identifies an event mentioned in the passage, including its date and location.",
+      "usage_count": 1
+    },
+    {
+      "name": "Relationship",
+      "args": [
+        "type",
+        "entities"
+      ],
+      "description": "Describes a relationship between entities mentioned in the passage, including the type of relationship (e.g., family member, colleague).",
+      "usage_count": 1
+    },
+    {
+      "name": "Work",
+      "args": [
+        "work"
+      ],
+      "description": "A creative work, such as a book or song",
+      "usage_count": 1
+    },
+    {
+      "name": "Organization",
+      "args": [
+        "organization"
+      ],
+      "description": "An organization or institution mentioned in the passage",
+      "usage_count": 1
     },
     {
       "name": "Location",
       "args": [
-        "type",
-        "name"
+        "place"
       ],
-      "description": "A place on the Earth's surface",
+      "description": "A geographic location, such as a city or country",
       "usage_count": 1
     },
     {
@@ -199,8 +213,8 @@
       "args": [
         "date"
       ],
-      "description": "A specific point in time",
-      "usage_count": 3
+      "description": "A specific date mentioned in the passage",
+      "usage_count": 2
     },
     {
       "name": "Entity",
@@ -220,12 +234,21 @@
       "usage_count": 1
     },
     {
+      "name": "Place",
+      "args": [
+        "place",
+        "location"
+      ],
+      "description": "A location mentioned in the text, which could be physical or abstract.",
+      "usage_count": 1
+    },
+    {
       "name": "Work",
       "args": [
         "work",
-        "type"
+        "title"
       ],
-      "description": "A creative work, such as a book, movie, or song, mentioned in the text.",
+      "description": "A creative work, such as a book, movie, or album, mentioned in the text.",
       "usage_count": 1
     },
     {
@@ -234,60 +257,67 @@
         "organization",
         "type"
       ],
-      "description": "An organization, such as a company or government agency, mentioned in the text.",
+      "description": "An organization mentioned in the text, which could be a company, government agency, or other type of group.",
       "usage_count": 1
     },
     {
-      "name": "Location",
+      "name": "Place",
+      "args": [
+        "type",
+        "location"
+      ],
+      "description": "A geographic location",
+      "usage_count": 1
+    },
+    {
+      "name": "Work",
+      "args": [
+        "type",
+        "author"
+      ],
+      "description": "A creative or intellectual product",
+      "usage_count": 1
+    },
+    {
+      "name": "Organization",
+      "args": [
+        "type",
+        "location"
+      ],
+      "description": "A group of people with a common goal",
+      "usage_count": 1
+    },
+    {
+      "name": "Date",
+      "args": [
+        "format"
+      ],
+      "description": "A point in time",
+      "usage_count": 1
+    },
+    {
+      "name": "Person",
+      "args": [
+        "name",
+        "date_of_birth"
+      ],
+      "description": "Describes a person mentioned in the passage.",
+      "usage_count": 1
+    },
+    {
+      "name": "Place",
       "args": [
         "location"
       ],
-      "description": "A geographic location mentioned in the text.",
+      "description": "Identifies a location mentioned in the passage.",
       "usage_count": 1
     },
     {
-      "name": "Event",
+      "name": "Organization",
       "args": [
-        "event",
-        "type"
+        "name"
       ],
-      "description": "An event, such as a game or concert, mentioned in the text.",
-      "usage_count": 1
-    },
-    {
-      "name": "Relationship",
-      "args": [
-        "relationship",
-        "type"
-      ],
-      "description": "A relationship between two entities, such as a team playing each other.",
-      "usage_count": 1
-    },
-    {
-      "name": "Factoid",
-      "args": [
-        "entity",
-        "type"
-      ],
-      "description": "A factoid is a piece of information that can be verified or disproved.",
-      "usage_count": 2
-    },
-    {
-      "name": "MultiHopQuestionAnswering",
-      "args": [
-        "work",
-        "organization"
-      ],
-      "description": "A multi-hop question answering system answers questions by following multiple logical hops.",
-      "usage_count": 2
-    },
-    {
-      "name": "Location",
-      "args": [
-        "type",
-        "place"
-      ],
-      "description": "A location is a place where something happens or exists.",
+      "description": "Identifies an organization mentioned in the passage.",
       "usage_count": 1
     }
   ]

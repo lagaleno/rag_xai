@@ -1,146 +1,198 @@
 {
   "rules": [
     {
-      "name": "rule_1",
-      "description": "Entity is of a specific type",
+      "name": "Entity-Type Inheritance",
+      "description": "An entity is of a specific type if it is an instance of another entity of that type.",
       "premises": [
         {
-          "predicate": "Person",
+          "predicate": "Entity",
           "args": [
-            "person_type"
+            "entity",
+            "type"
           ]
         },
         {
-          "predicate": "Entity(entity_type)"
+          "predicate": "Entity",
+          "args": [
+            "instance",
+            "entity",
+            "type"
+          ]
         }
       ],
       "conclusion": {
         "predicate": "Entity",
         "args": [
-          "entity_type"
-        ]
-      }
-    },
-    {
-      "name": "rule_2",
-      "description": "Work is of a specific type",
-      "premises": [
-        {
-          "predicate": "Work(work_type)"
-        }
-      ],
-      "conclusion": {
-        "predicate": "Work",
-        "args": [
-          "work_type"
-        ]
-      }
-    },
-    {
-      "name": "rule_3",
-      "description": "Organization is of a specific type",
-      "premises": [
-        {
-          "predicate": "Organization(organization_type)"
-        }
-      ],
-      "conclusion": {
-        "predicate": "Organization",
-        "args": [
-          "organization_type"
-        ]
-      }
-    },
-    {
-      "name": "rule_4",
-      "description": "Location is of a specific type",
-      "premises": [
-        {
-          "predicate": "Location(location_type)"
-        }
-      ],
-      "conclusion": {
-        "predicate": "Location",
-        "args": [
-          "location_type"
-        ]
-      }
-    },
-    {
-      "name": "rule_5",
-      "description": "Date is of a specific type",
-      "premises": [
-        {
-          "predicate": "Date(date_type)"
-        }
-      ],
-      "conclusion": {
-        "predicate": "Date",
-        "args": [
-          "date_type"
-        ]
-      }
-    },
-    {
-      "name": "rule_6",
-      "description": "Entity is related to another entity of a specific type",
-      "premises": [
-        {
-          "predicate": "Relationship(relationship_type, entity1_type, entity2_type)"
-        },
-        {
-          "predicate": "Person(entity)"
-        },
-        {
-          "predicate": "Entity(type)"
-        }
-      ],
-      "conclusion": {
-        "predicate": "Relationship",
-        "args": [
-          "relationship_type",
-          "entity1_type",
+          "instance",
           "type"
         ]
       }
     },
     {
-      "name": "rule_7",
-      "description": "Work is related to an organization of a specific type",
+      "name": "Person-Type Inheritance",
+      "description": "A person is of a specific type if they are an instance of another entity of that type.",
       "premises": [
         {
-          "predicate": "Work(work, type)"
+          "predicate": "Person",
+          "args": [
+            "person",
+            "entity"
+          ]
         },
         {
-          "predicate": "Organization(organization, type)"
+          "predicate": "Entity",
+          "args": [
+            "instance",
+            "entity",
+            "type"
+          ]
         }
       ],
       "conclusion": {
-        "predicate": "Relationship",
+        "predicate": "Type",
         "args": [
-          "related_to",
-          "work",
-          "organization"
+          "person",
+          "type"
         ]
       }
     },
     {
-      "name": "rule_8",
-      "description": "Location is related to a place of a specific type",
+      "name": "Work-Type Inheritance",
+      "description": "A work is of a specific type if it is an instance of another entity of that type.",
       "premises": [
         {
-          "predicate": "Location(entity, type)"
+          "predicate": "Work",
+          "args": [
+            "work",
+            "entity"
+          ]
         },
         {
-          "predicate": "Place(place_type)"
+          "predicate": "Entity",
+          "args": [
+            "instance",
+            "entity",
+            "type"
+          ]
+        }
+      ],
+      "conclusion": {
+        "predicate": "Type",
+        "args": [
+          "work",
+          "type"
+        ]
+      }
+    },
+    {
+      "name": "Organization-Type Inheritance",
+      "description": "An organization is of a specific type if it is an instance of another entity of that type.",
+      "premises": [
+        {
+          "predicate": "Organization",
+          "args": [
+            "organization",
+            "entity"
+          ]
+        },
+        {
+          "predicate": "Entity",
+          "args": [
+            "instance",
+            "entity",
+            "type"
+          ]
+        }
+      ],
+      "conclusion": {
+        "predicate": "Type",
+        "args": [
+          "organization",
+          "type"
+        ]
+      }
+    },
+    {
+      "name": "Location-Type Inheritance",
+      "description": "A location is of a specific type if it is an instance of another entity of that type.",
+      "premises": [
+        {
+          "predicate": "Location",
+          "args": [
+            "location",
+            "entity"
+          ]
+        },
+        {
+          "predicate": "Entity",
+          "args": [
+            "instance",
+            "entity",
+            "type"
+          ]
+        }
+      ],
+      "conclusion": {
+        "predicate": "Type",
+        "args": [
+          "location",
+          "type"
+        ]
+      }
+    },
+    {
+      "name": "Date-Type Inheritance",
+      "description": "A date is of a specific type if it is an instance of another entity of that type.",
+      "premises": [
+        {
+          "predicate": "Date",
+          "args": [
+            "date",
+            "entity"
+          ]
+        },
+        {
+          "predicate": "Entity",
+          "args": [
+            "instance",
+            "entity",
+            "type"
+          ]
+        }
+      ],
+      "conclusion": {
+        "predicate": "Type",
+        "args": [
+          "date",
+          "type"
+        ]
+      }
+    },
+    {
+      "name": "Related by Type",
+      "description": "Entities of the same type are related.",
+      "premises": [
+        {
+          "predicate": "Entity",
+          "args": [
+            "entity1",
+            "type"
+          ]
+        },
+        {
+          "predicate": "Entity",
+          "args": [
+            "entity2",
+            "type"
+          ]
         }
       ],
       "conclusion": {
         "predicate": "Relationship",
         "args": [
-          "related_to",
-          "entity",
-          "place_type"
+          "related_by_type",
+          "entity1",
+          "entity2"
         ]
       }
     }
