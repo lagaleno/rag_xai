@@ -58,15 +58,28 @@ def facts_from_dict_list(fact_dicts: List[Dict]) -> Set[Fact]:
       {"predicate": "located_in", "args": ["A", "B"]}
     em um set de fatos do tipo:
       ("located_in", ("A", "B"))
+
+    Garante que:
+    - predicate é string
+    - todos os args são convertidos para string
+    - ignora entradas malformadas
     """
     facts: Set[Fact] = set()
     for fd in fact_dicts:
         pred = fd.get("predicate")
-        args = fd.get("args", [])
-        if pred is None or not isinstance(args, list):
+        raw_args = fd.get("args", [])
+
+        if not isinstance(pred, str):
             continue
+        if not isinstance(raw_args, list):
+            continue
+
+        # Força todos os argumentos a serem strings (evita dicts/listas não-hashable)
+        args = [str(a) for a in raw_args]
+
         facts.add((pred, tuple(args)))
     return facts
+
 
 
 def dict_list_from_facts(facts: Set[Fact]) -> List[Dict]:
@@ -146,11 +159,6 @@ def find_rule_matches(rule: Dict, facts: Set[Fact]) -> List[Dict[str, str]]:
 
 
 def apply_rule_once(rule: Dict, facts: Set[Fact]) -> Set[Fact]:
-    """
-    Aplica uma regra sobre o conjunto de fatos UMA VEZ,
-    retornando o conjunto de NOVOS fatos inferidos (que ainda não
-    estavam em 'facts').
-    """
     new_facts: Set[Fact] = set()
 
     envs = find_rule_matches(rule, facts)
@@ -165,12 +173,13 @@ def apply_rule_once(rule: Dict, facts: Set[Fact]) -> Set[Fact]:
             if var not in env:
                 ok = False
                 break
-            c_args_instantiated.append(env[var])
+            # força valor a ser string
+            c_args_instantiated.append(str(env[var]))
 
         if not ok:
             continue
 
-        fact_conclusion: Fact = (c_pred, tuple(c_args_instantiated))
+        fact_conclusion: Fact = (str(c_pred), tuple(c_args_instantiated))
         if fact_conclusion not in facts:
             new_facts.add(fact_conclusion)
 
