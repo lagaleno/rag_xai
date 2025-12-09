@@ -23,8 +23,6 @@ RULES_RAW_OUT = PROJECT_ROOT / "3-metrics" / "first_order_logic" / "logical_rule
 
 LLAMA_MODEL_NAME = "llama3"
 
-TARGET_MIN_RULES = 3
-TARGET_MAX_RULES = 12
 
 TEMPERATURE = 0.5
 
@@ -42,16 +40,63 @@ def load_schema(path: Path) -> dict:
 
 
 def build_prompt(schema: dict) -> str:
+    """
+    Constrói um prompt bem explícito, mostrando:
+    - a lista de predicados com seus tipos,
+    - templates com variáveis X1, X2... respeitando a aridade,
+    - exemplos de regras VÁLIDAS usando esse esquema.
+    """
     predicates = schema.get("predicates", [])
 
-    lines = []
-    for p in predicates:
+    # Lista legível de predicados com tipos
+    human_lines = []
+    template_lines = []
+    sample_rule_premises = []
+    sample_rule_conclusion = None
+
+    for i, p in enumerate(predicates, start=1):
         name = p.get("name")
         args = p.get("args", [])
         args_str = ", ".join(args)
-        lines.append(f"- {name}({args_str})")
+        human_lines.append(f"- {name}({args_str})")
 
-    predicates_with_args = "\n   ".join(lines)
+        # Template com variáveis X1, X2, ...
+        var_args = [f"X{j+1}" for j in range(len(args))]
+        var_args_str = ", ".join(var_args)
+        template_lines.append(f"- {name}({var_args_str})")
+
+        # Guardar 2 predicados simples para um exemplo de regra
+        if len(sample_rule_premises) < 2:
+            sample_rule_premises.append({
+                "predicate": name,
+                "args": var_args,
+            })
+        elif sample_rule_conclusion is None:
+            sample_rule_conclusion = {
+                "predicate": name,
+                "args": var_args,
+            }
+
+    predicates_human = "\n   ".join(human_lines)
+    predicates_templates = "\n   ".join(template_lines)
+
+    # fallback se não tivermos um exemplo de conclusão
+    if sample_rule_conclusion is None and sample_rule_premises:
+        sample_rule_conclusion = sample_rule_premises[0]
+
+    # Exemplo de regra no formato JSON
+    example_rule = {
+        "name": "example_rule",
+        "description": "Example rule using the given predicates with variables.",
+        "premises": sample_rule_premises,
+        "conclusion": sample_rule_conclusion,
+    }
+
+    example_rule_json = json.dumps(
+        {"rules": [example_rule]},
+        indent=2,
+        ensure_ascii=False,
+    )
 
     prompt = f"""
 You will generate a small set of FIRST-ORDER LOGIC inference rules (Horn clauses)
@@ -59,28 +104,42 @@ based ONLY on the predicate schema provided below.
 
 STRICT REQUIREMENTS YOU MUST FOLLOW:
 
-1. Use ONLY these predicates exactly as written, with exactly these arguments
-   in exactly this order. Do NOT invent new predicates. Do NOT rename predicates.
-   The allowed predicates are:
+1. You MUST use ONLY these predicates, exactly as written, with exactly these
+   argument positions (same number of arguments, in the same order).
+   These are the allowed predicates with their argument *types*:
 
-   {predicates_with_args}
+   {predicates_human}
 
-2. DO NOT invent additional predicates such as “typically_found_in”,
-   “associated_with”, “connected_to”, etc.
+2. When writing rules, you MUST use logical variables like X1, X2, X3, ...
+   instead of the type names. Here are the exact templates you MUST follow:
 
-3. Avoid vague rules that conclude `related_to(...)`.
+   {predicates_templates}
+
+   For example, if the schema has:
+     - located_in(entity, location)
+   then in a rule you MUST write it as:
+     - located_in(X1, X2)
+
+   The number of arguments MUST be exactly the same as in the schema.
+
+3. DO NOT invent additional predicates such as “typically_found_in”,
+   “associated_with”, “connected_to”, etc. Use ONLY the predicates listed
+   above.
+
+4. Avoid vague rules that conclude `related_to(...)`.
    Only produce a rule with `related_to` IF the conclusion is clearly justified
    by the premises. If unsure, DO NOT use `related_to`.
 
-4. NO tautologies. Do NOT produce rules where the conclusion is identical
-   to one of the premises.
+5. NO tautologies.
+   Do NOT produce rules where the conclusion is identical
+   to one of the premises (same predicate AND same arguments).
 
-5. Rules must be informational: they must generate NEW logical consequences,
+6. Rules must be informational: they must generate NEW logical consequences,
    e.g., transitivity, inheritance, propagation, membership inference, etc.
 
-6. You MUST produce between 3 and 8 rules.
+7. Produce as many rules as needed, as long as each rule is valid, non-tautological, and logically informative.
 
-7. Output MUST be valid JSON ONLY. No explanation, no text before or after.
+8. Output MUST be valid JSON ONLY. No explanation, no text before or after.
 
 JSON FORMAT TO OUTPUT:
 {{
@@ -89,16 +148,23 @@ JSON FORMAT TO OUTPUT:
       "name": "rule_name",
       "description": "Short natural-language summary",
       "premises": [
-        {{"predicate": "...", "args": ["...","..."] }},
+        {{"predicate": "...", "args": ["X1","X2"] }},
         ...
       ],
       "conclusion": {{
         "predicate": "...",
-        "args": ["...","..."]
+        "args": ["X1","X2"]
       }}
     }}
   ]
 }}
+
+Here is ONE EXAMPLE of a valid JSON structure using the schema
+(THIS IS ONLY AN EXAMPLE, YOU MUST PROPOSE YOUR OWN RULES):
+
+{example_rule_json}
+
+Remember: your answer MUST be ONLY a JSON object with a "rules" list.
 """
     return prompt.strip()
 
@@ -114,7 +180,8 @@ def call_llama(prompt: str, temperature: float = TEMPERATURE) -> str:
     data = {
         "model": LLAMA_MODEL_NAME,
         "messages": [
-            {"role": "system", "content": prompt},
+            # Deixamos o prompt como 'user' para alguns modelos seguirem melhor.
+            {"role": "user", "content": prompt},
         ],
         "options": {
             "temperature": temperature,
@@ -162,8 +229,8 @@ def validate_and_filter_rules(schema: dict, rules_obj: dict) -> dict:
     Valida e filtra regras geradas pelo LLM:
     - só aceita regras cujos predicados existem no schema,
     - aridade bate com o schema,
-    - opcionalmente filtra tautologias;
-    - NÃO vamos ser tão agressivos com variáveis da conclusão.
+    - descarta tautologias simples (conclusão == premissa),
+    - NÃO força restrições adicionais sobre variáveis.
 
     Retorna um novo objeto {"rules": [...]} só com as regras válidas.
     """
@@ -184,17 +251,21 @@ def validate_and_filter_rules(schema: dict, rules_obj: dict) -> dict:
         concl_pred = conclusion.get("predicate")
         concl_args = conclusion.get("args", [])
 
-        # flag para debug
-        reason = None
+        reason = None  # motivo para descartar, se houver
+
+        # 0) Precisa ter pelo menos 1 premissa
+        if not premises:
+            reason = "no premises provided"
 
         # 1) Conclusão: predicado conhecido e aridade correta
-        if concl_pred not in pred_arity:
-            reason = f"unknown conclusion predicate '{concl_pred}'"
-        elif len(concl_args) != pred_arity[concl_pred]:
-            reason = (
-                f"wrong arity for conclusion '{concl_pred}': "
-                f"got {len(concl_args)}, expected {pred_arity[concl_pred]}"
-            )
+        if reason is None:
+            if concl_pred not in pred_arity:
+                reason = f"unknown conclusion predicate '{concl_pred}'"
+            elif len(concl_args) != pred_arity[concl_pred]:
+                reason = (
+                    f"wrong arity for conclusion '{concl_pred}': "
+                    f"got {len(concl_args)}, expected {pred_arity[concl_pred]}"
+                )
 
         # 2) Premissas: predicados conhecidos e aridade certa
         if reason is None:
@@ -225,7 +296,6 @@ def validate_and_filter_rules(schema: dict, rules_obj: dict) -> dict:
                 print(f"  ❌ Rule {idx} dropped: {reason}")
             continue
 
-        # Se passou pelos checks básicos, aceitamos
         good_rules.append(rule)
         if DEBUG_VALIDATION:
             print(f"  ✅ Rule {idx} accepted: {rule.get('name')}")
@@ -272,7 +342,6 @@ def main():
 
     # ============ Proveniência (rules) ============
 
-    # 1) Recuperar PREDICATE_ID do ambiente
     predicate_id_env = os.environ.get("PREDICATE_ID")
 
     if predicate_id_env is None:
@@ -285,37 +354,32 @@ def main():
         print(f"⚠️ PREDICATE_ID inválido: {predicate_id_env!r}; pulando registro em 'rules'.")
         return
 
-    # 2) Definir caminho em records/rules/{predicate_id}/...
     records_dir = RECORDS_ROOT / "rules" / str(predicate_id)
     records_dir.mkdir(parents=True, exist_ok=True)
 
     rules_records_rel = f"records/rules/{predicate_id}/{RULES_OUT.name}"
     rules_records_abs = PROJECT_ROOT / rules_records_rel
 
-    # 3) Copiar o arquivo original de regras para a pasta records
     if RULES_OUT.exists():
         shutil.copy2(RULES_OUT, rules_records_abs)
     else:
-        print(f"⚠️ RULES_FILE não encontrado em {RULES_OUT}; não será possível registrar o path corretamente.")
+        print(f"⚠️ RULES_OUT não encontrado em {RULES_OUT}; não será possível registrar o path corretamente.")
         return
 
-    # 4) Registrar na tabela rules
     try:
         prov = ProvenanceDB()
         rules_id = prov.insert_rules(
             predicate_id=predicate_id,
-            model=LLAMA_MODEL_NAME,    
-            temperature=TEMPERATURE,  
-            prompt=prompt,     
-            path=rules_records_rel,   
+            model=LLAMA_MODEL_NAME,
+            temperature=TEMPERATURE,
+            prompt=prompt,
+            path=rules_records_rel,
         )
         prov.close()
         os.environ["RULES_ID"] = str(rules_id)
         print(f"💾 Rules registradas no banco com id={rules_id} (predicate_id={predicate_id})")
     except Exception as e:
         print(f"⚠️ Erro ao registrar 'rules' no banco: {e}")
-
-
 
 
 if __name__ == "__main__":
