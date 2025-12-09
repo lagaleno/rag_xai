@@ -3,9 +3,11 @@ import os
 import requests
 from pathlib import Path
 import sys
+import shutil
 
 THIS_FILE = Path(__file__).resolve()
 PROJECT_ROOT = THIS_FILE.parents[2]
+RECORDS_ROOT = PROJECT_ROOT / "records"
 
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.append(str(PROJECT_ROOT))
@@ -268,31 +270,52 @@ def main():
     for rule in rules.get("rules", []):
         print(f"- {rule.get('name')}: {rule.get('description')}")
 
-    # === PROVENIÊNCIA ===
-    logic_metric_id_env = os.getenv("LOGIC_METRIC_ID")
-    if logic_metric_id_env is None:
-        print("⚠️ LOGIC_METRIC_ID não encontrado no ambiente. Pulando registro de rules_config.")
+    # ============ Proveniência (rules) ============
+
+    # 1) Recuperar PREDICATE_ID do ambiente
+    predicate_id_env = os.environ.get("PREDICATE_ID")
+
+    if predicate_id_env is None:
+        print("⚠️ PREDICATE_ID não definido no ambiente; pulando registro em 'rules'.")
         return
 
-    logic_metric_id = int(logic_metric_id_env)
+    try:
+        predicate_id = int(predicate_id_env)
+    except ValueError:
+        print(f"⚠️ PREDICATE_ID inválido: {predicate_id_env!r}; pulando registro em 'rules'.")
+        return
 
-    rules_config = {
-        "prompt": prompt,
-        "list_rules": rules,
-        "model": LLAMA_MODEL_NAME,
-        "target_min_rules": TARGET_MIN_RULES,
-        "target_max_rules": TARGET_MAX_RULES,
-        "temperature": TEMPERATURE,
-    }
+    # 2) Definir caminho em records/rules/{predicate_id}/...
+    records_dir = RECORDS_ROOT / "rules" / str(predicate_id)
+    records_dir.mkdir(parents=True, exist_ok=True)
 
-    prov = ProvenanceDB()
-    prov.update_logic_metric_configs(
-        logic_metric_id=logic_metric_id,
-        rules_config=rules_config,
-    )
-    prov.close()
+    rules_records_rel = f"records/rules/{predicate_id}/{RULES_OUT.name}"
+    rules_records_abs = PROJECT_ROOT / rules_records_rel
 
-    print(f"🧠 rules_config registrado no banco para logic_metric_id={logic_metric_id}")
+    # 3) Copiar o arquivo original de regras para a pasta records
+    if RULES_OUT.exists():
+        shutil.copy2(RULES_OUT, rules_records_abs)
+    else:
+        print(f"⚠️ RULES_FILE não encontrado em {RULES_OUT}; não será possível registrar o path corretamente.")
+        return
+
+    # 4) Registrar na tabela rules
+    try:
+        prov = ProvenanceDB()
+        rules_id = prov.insert_rules(
+            predicate_id=predicate_id,
+            model=LLAMA_MODEL_NAME,    
+            temperature=TEMPERATURE,  
+            prompt=prompt,     
+            path=rules_records_rel,   
+        )
+        prov.close()
+        os.environ["RULES_ID"] = str(rules_id)
+        print(f"💾 Rules registradas no banco com id={rules_id} (predicate_id={predicate_id})")
+    except Exception as e:
+        print(f"⚠️ Erro ao registrar 'rules' no banco: {e}")
+
+
 
 
 if __name__ == "__main__":

@@ -273,33 +273,27 @@ def main():
 
     # ============ PROVENIÊNCIA ============
 
-    experiment_id_env = os.getenv("EXPERIMENT_ID")
-    if experiment_id_env is None:
-        print("⚠️ EXPERIMENT_ID não encontrado no ambiente. Pulando registro de proveniência de validação.")
+    xai_dataset_id_env = os.getenv("XAI_DATASET_ID")
+    if xai_dataset_id_env is None:
+        print("⚠️ XAI_DATASET_ID não encontrado no ambiente. Pulando registro de proveniência de validação.")
     else:
-        experiment_id = int(experiment_id_env)
+        xai_dataset_id = int(xai_dataset_id_env)
         prov = ProvenanceDB()
 
-        # summary tem MultiIndex nas colunas; vamos transformar em dict serializável
-        summary_dict = summary.to_dict()
+        try:
+            xai_dataset_id = int(xai_dataset_id_env)
 
-        details = {
-            "embedding_model": EMBEDDING_MODEL,
-            "sim_threshold": SIM_THRESHOLD,
-            "summary_by_label": summary_dict,
-        }
-
-        validation_id = prov.insert_validation(
-            experiment_id=experiment_id,
-            embedding_model=str(EMBEDDING_MODEL),
-            threshold=SIM_THRESHOLD,
-            is_valid=bool(is_valid),
-            details=str(details),
-        )
-
-        print(f"🧪 Validation registrada no banco com id={validation_id}")
-        prov.close()
-
-    return is_valid
+            prov.insert_validity(
+                xai_dataset_id=xai_dataset_id,
+                embedding=EMBEDDING_MODEL,
+                similarity_threshold=SIM_THRESHOLD,
+                output=bool(is_valid),
+            )
+            prov.close()
+            print(f"💾 Validity registrada no banco para xai_dataset_id={xai_dataset_id}")
+        except Exception as e:
+            print(f"⚠️ Erro ao registrar validity no banco: {e}")
+            
+        return is_valid
 if __name__ == "__main__":
     main()

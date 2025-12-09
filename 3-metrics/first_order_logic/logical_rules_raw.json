@@ -1,198 +1,177 @@
 {
   "rules": [
     {
-      "name": "Entity-Type Inheritance",
-      "description": "An entity is of a specific type if it is an instance of another entity of that type.",
+      "name": "Work_by_Organization",
+      "description": "An organization typically produces a work.",
       "premises": [
         {
           "predicate": "Entity",
           "args": [
-            "entity",
-            "type"
+            "work_type"
           ]
         },
         {
+          "predicate": "Organization",
+          "args": [
+            "org_type"
+          ]
+        }
+      ],
+      "conclusion": {
+        "predicate": "Work",
+        "args": [
+          "work_type",
+          "medium"
+        ]
+      }
+    },
+    {
+      "name": "Person_with_Nationality",
+      "description": "A person has a nationality.",
+      "premises": [
+        {
           "predicate": "Entity",
           "args": [
-            "instance",
-            "entity",
-            "type"
+            "person_type"
+          ]
+        },
+        {
+          "predicate": "Person",
+          "args": [
+            "person_type",
+            "nationality"
           ]
         }
       ],
       "conclusion": {
         "predicate": "Entity",
         "args": [
-          "instance",
-          "type"
+          "person_type"
         ]
       }
     },
     {
-      "name": "Person-Type Inheritance",
-      "description": "A person is of a specific type if they are an instance of another entity of that type.",
+      "name": "Location_in_Geography",
+      "description": "A location is in a geographic area.",
       "premises": [
-        {
-          "predicate": "Person",
-          "args": [
-            "person",
-            "entity"
-          ]
-        },
         {
           "predicate": "Entity",
           "args": [
-            "instance",
-            "entity",
-            "type"
-          ]
-        }
-      ],
-      "conclusion": {
-        "predicate": "Type",
-        "args": [
-          "person",
-          "type"
-        ]
-      }
-    },
-    {
-      "name": "Work-Type Inheritance",
-      "description": "A work is of a specific type if it is an instance of another entity of that type.",
-      "premises": [
-        {
-          "predicate": "Work",
-          "args": [
-            "work",
-            "entity"
+            "location_type"
           ]
         },
-        {
-          "predicate": "Entity",
-          "args": [
-            "instance",
-            "entity",
-            "type"
-          ]
-        }
-      ],
-      "conclusion": {
-        "predicate": "Type",
-        "args": [
-          "work",
-          "type"
-        ]
-      }
-    },
-    {
-      "name": "Organization-Type Inheritance",
-      "description": "An organization is of a specific type if it is an instance of another entity of that type.",
-      "premises": [
-        {
-          "predicate": "Organization",
-          "args": [
-            "organization",
-            "entity"
-          ]
-        },
-        {
-          "predicate": "Entity",
-          "args": [
-            "instance",
-            "entity",
-            "type"
-          ]
-        }
-      ],
-      "conclusion": {
-        "predicate": "Type",
-        "args": [
-          "organization",
-          "type"
-        ]
-      }
-    },
-    {
-      "name": "Location-Type Inheritance",
-      "description": "A location is of a specific type if it is an instance of another entity of that type.",
-      "premises": [
         {
           "predicate": "Location",
           "args": [
-            "location",
-            "entity"
-          ]
-        },
-        {
-          "predicate": "Entity",
-          "args": [
-            "instance",
-            "entity",
-            "type"
+            "location_type",
+            "geographic"
           ]
         }
       ],
       "conclusion": {
-        "predicate": "Type",
+        "predicate": "Entity",
         "args": [
-          "location",
-          "type"
+          "location_type"
         ]
       }
     },
     {
-      "name": "Date-Type Inheritance",
-      "description": "A date is of a specific type if it is an instance of another entity of that type.",
+      "name": "Work_on_Date",
+      "description": "A work is produced on a date.",
       "premises": [
-        {
-          "predicate": "Date",
-          "args": [
-            "date",
-            "entity"
-          ]
-        },
         {
           "predicate": "Entity",
           "args": [
-            "instance",
-            "entity",
-            "type"
+            "work_type"
+          ]
+        },
+        {
+          "predicate": "Work",
+          "args": [
+            "work_type",
+            "medium"
           ]
         }
       ],
       "conclusion": {
-        "predicate": "Type",
+        "predicate": "Date",
         "args": [
-          "date",
-          "type"
+          "date_type"
         ]
       }
     },
     {
-      "name": "Related by Type",
-      "description": "Entities of the same type are related.",
+      "name": "Person_at_Location",
+      "description": "A person is typically found at a location.",
       "premises": [
         {
           "predicate": "Entity",
           "args": [
-            "entity1",
-            "type"
+            "person_type"
           ]
         },
         {
-          "predicate": "Entity",
+          "predicate": "Person",
           "args": [
-            "entity2",
-            "type"
+            "person_type",
+            "nationality"
           ]
         }
       ],
       "conclusion": {
-        "predicate": "Relationship",
+        "predicate": "Location",
         "args": [
-          "related_by_type",
-          "entity1",
-          "entity2"
+          "location_type"
+        ]
+      }
+    },
+    {
+      "name": "Organization_in_Location",
+      "description": "An organization is typically found in a location.",
+      "premises": [
+        {
+          "predicate": "Entity",
+          "args": [
+            "org_type"
+          ]
+        },
+        {
+          "predicate": "Organization",
+          "args": [
+            "org_type"
+          ]
+        }
+      ],
+      "conclusion": {
+        "predicate": "Location",
+        "args": [
+          "location_type"
+        ]
+      }
+    },
+    {
+      "name": "Work_by_Person",
+      "description": "A person typically produces a work.",
+      "premises": [
+        {
+          "predicate": "Entity",
+          "args": [
+            "person_type"
+          ]
+        },
+        {
+          "predicate": "Person",
+          "args": [
+            "person_type",
+            "nationality"
+          ]
+        }
+      ],
+      "conclusion": {
+        "predicate": "Work",
+        "args": [
+          "work_type",
+          "medium"
         ]
       }
     }

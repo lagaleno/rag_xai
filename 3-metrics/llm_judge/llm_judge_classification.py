@@ -3,6 +3,7 @@ from pathlib import Path
 import sys
 import os
 import requests
+import shutil
 
 import pandas as pd
 
@@ -10,11 +11,12 @@ import pandas as pd
 
 THIS_FILE = Path(__file__).resolve()
 PROJECT_ROOT = THIS_FILE.parents[2]
+RECORDS_ROOT = PROJECT_ROOT / "records"
 
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.append(str(PROJECT_ROOT))
 
-# from provenance import ProvenanceDB  # opcional, se quiser registrar depois
+from provenance import ProvenanceDB  # opcional, se quiser registrar depois
 
 # ================== CONFIGURAÇÕES ==================
 
@@ -274,6 +276,42 @@ def main():
 
     confusion_long.to_csv(JUDGE_SUMMARY_OUTPUT_CSV, index=False)
     print(f"✅ Saved judge confusion matrix (long) to: {JUDGE_SUMMARY_OUTPUT_CSV}")
+
+    # ============ Proveniência (llm_judge) ============
+
+    experiment_id_env = os.environ.get("EXPERIMENT_ID")
+    xai_dataset_id_env = os.environ.get("XAI_DATASET_ID")
+
+    if experiment_id_env is not None and xai_dataset_id_env is not None:
+        try:
+            experiment_id = int(experiment_id_env)
+            xai_dataset_id = int(xai_dataset_id_env)
+
+            # Pasta: records/experiments/{experiment_id}/llm_judge/
+            records_dir = RECORDS_ROOT / "experiments" / str(experiment_id) / "llm_judge"
+            records_dir.mkdir(parents=True, exist_ok=True)
+
+            # Copiamos o CSV de julgamentos para dentro de records
+            llm_judge_records_rel = f"records/experiments/{experiment_id}/llm_judge/{JUDGE_SUMMARY_OUTPUT_CSV.name}"
+            llm_judge_records_abs = PROJECT_ROOT / llm_judge_records_rel
+
+            shutil.copy2(JUDGE_SUMMARY_OUTPUT_CSV, llm_judge_records_abs)
+
+            prov = ProvenanceDB()
+            prov.insert_llm_judge_run(
+                experiment_id=experiment_id,
+                xai_dataset_id=xai_dataset_id,
+                model=JUDGE_MODEL_NAME,       
+                temperature=JUDGE_TEMPERATURE,   
+                prompt=prompt,        
+                path=llm_judge_records_rel, 
+            )
+            prov.close()
+            print(f"💾 LLM Judge registrada no banco para experiment_id={experiment_id}")
+        except Exception as e:
+            print(f"⚠️ Erro ao registrar llm_judge no banco: {e}")
+    else:
+        print("⚠️ EXPERIMENT_ID ou XAI_DATASET_ID não definido no ambiente; pulando registro de llm_judge.")
 
 
 if __name__ == "__main__":

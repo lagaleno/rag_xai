@@ -5,6 +5,7 @@ import subprocess
 from pathlib import Path
 from typing import Dict, List, Any
 import requests
+import shutil
 
 
 import pandas as pd
@@ -13,6 +14,7 @@ import sys
 
 THIS_FILE = Path(__file__).resolve()
 PROJECT_ROOT = THIS_FILE.parents[2]
+RECORDS_ROOT = PROJECT_ROOT / "records"
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.append(str(PROJECT_ROOT))
 
@@ -105,6 +107,7 @@ Here is the {source_type} text:
 
 \"\"\"{text}\"\"\"
 """
+
     return prompt.strip()
 
 
@@ -285,30 +288,54 @@ def main():
 
     print(f"\n✅ Finished. Facts saved to: {OUTPUT_JSONL}")
 
-    # ====== PROVENIÊNCIA ======
+    # ============ Proveniência (facts) ============
 
-    logic_metric_id_env = os.getenv("LOGIC_METRIC_ID")
-    if logic_metric_id_env is None:
-        print("⚠️ LOGIC_METRIC_ID não encontrado no ambiente. Pulando registro de facts_config.")
+    # 1) Recuperar IDs necessários do ambiente
+    predicate_id_env = os.environ.get("PREDICATE_ID")
+    xai_dataset_id_env = os.environ.get("XAI_DATASET_ID")
+
+    if predicate_id_env is None or xai_dataset_id_env is None:
+        print("⚠️ PREDICATE_ID ou XAI_DATASET_ID não definido no ambiente; pulando registro em 'facts'.")
         return
 
-    logic_metric_id = int(logic_metric_id_env)
+    try:
+        predicate_id = int(predicate_id_env)
+        xai_dataset_id = int(xai_dataset_id_env)
+    except ValueError:
+        print(f"⚠️ IDs inválidos: PREDICATE_ID={predicate_id_env!r}, XAI_DATASET_ID={xai_dataset_id_env!r}; pulando registro em 'facts'.")
+        return
 
-    facts_config = {
-        "prompt": PROV_METRIC["prompt"],            
-        "model": LLAMA_MODEL_NAME,         
-        "temperature": TEMPERATURE,    
-        "max_rows": MAX_ROWS,
-    }
+    # 2) Definir caminho em records/facts/...
+    #    Podemos organizar por predicate_id + xai_dataset_id
+    records_dir = RECORDS_ROOT / "facts" / f"p{predicate_id}_xd{xai_dataset_id}"
+    records_dir.mkdir(parents=True, exist_ok=True)
 
-    prov = ProvenanceDB()
-    prov.update_logic_metric_configs(
-        logic_metric_id=logic_metric_id,
-        facts_config=facts_config,
-    )
-    prov.close()
+    facts_records_rel = f"records/facts/p{predicate_id}_xd{xai_dataset_id}/{OUTPUT_JSONL.name}"
+    facts_records_abs = PROJECT_ROOT / facts_records_rel
 
-    print(f"🧠 facts_config registrado no banco para logic_metric_id={logic_metric_id}")
+    # 3) Copiar o arquivo original de fatos para a pasta records
+    if OUTPUT_JSONL.exists():
+        shutil.copy2(OUTPUT_JSONL, facts_records_abs)
+    else:
+        print(f"⚠️ OUTPUT_JSONL não encontrado em {OUTPUT_JSONL}; não será possível registrar o path corretamente.")
+        return
+
+    # 4) Registrar na tabela facts
+    try:
+        prov = ProvenanceDB()
+        facts_id = prov.insert_facts(
+            predicate_id=predicate_id,
+            xai_dataset_id=xai_dataset_id,
+            model=LLAMA_MODEL_NAME,    
+            temperature=TEMPERATURE,  
+            prompt=PROV_METRIC,      
+            path=facts_records_rel,   
+        )
+        prov.close()
+        os.environ["FACTS_ID"] = str(facts_id)
+        print(f"💾 Facts registrados no banco com id={facts_id} (predicate_id={predicate_id}, xai_dataset_id={xai_dataset_id})")
+    except Exception as e:
+        print(f"⚠️ Erro ao registrar 'facts' no banco: {e}")
 
 
 if __name__ == "__main__":

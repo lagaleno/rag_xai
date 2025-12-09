@@ -73,16 +73,6 @@ def main():
     # ==============================
     prov = ProvenanceDB()
 
-    experiment_id = prov.create_experiment(
-        hotpot_path=str(HOTPOT_SAMPLE_CSV),
-        seed=0,
-        n_samples=0,
-    )
-
-    print(f"🧪 Experiment started with id={experiment_id}")
-
-    # deixar o experiment_id disponível pros outros scripts via variável de ambiente
-    os.environ["EXPERIMENT_ID"] = str(experiment_id)
     print("======== Set up the environment ========")
 
     # ==============================
@@ -97,11 +87,31 @@ def main():
     # ==============================
     # 3) DATASET DE EXPLICAÇÕES: GERAR APENAS SE PRECISAR
     # ==============================
-    if EXPLAINRAG_DATASET_JSONL.exists():
-        print(f"📄 ExplainRAG dataset JSONL already exists at {EXPLAINRAG_DATASET_JSONL}, skipping create_dataset.py")
-    else:
-        print(f"🧾 ExplainRAG dataset JSONL not found. Running: {CREATE_DATASET_SCRIPT}")
-        run_script(CREATE_DATASET_SCRIPT)
+    
+    run_script(CREATE_DATASET_SCRIPT)
+    
+    # ==============================
+    # RECUPERAR hotpot_sample_id DO BANCO
+    # ==============================
+
+    hotpot_sample_id = prov.get_or_create_hotpot_sample(
+        n_sample=int(os.getenv("HOTPOT_N_SAMPLES")),
+        seed=int(os.getenv("HOTPOT_SEED")),
+    )
+
+    # ==============================
+    # CRIAR EXPERIMENTO COM ESSES IDs
+    # ==============================
+
+    experiment_id = prov.create_experiment(
+        hotpot_sample_id=hotpot_sample_id,
+        xai_dataset_id=os.getenv("XAI_DATASET_ID"),
+    )
+
+    print(f"🧪 Experiment started with id={experiment_id}")
+    os.environ["EXPERIMENT_ID"] = str(experiment_id)
+    
+    os.environ["HOTPOT_SAMPLE_ID"] = str(hotpot_sample_id)
 
     # ==============================
     # 4) VALIDAR DATASET
@@ -117,6 +127,7 @@ def main():
 
     print("✅ Dataset is valid. Proceeding with metrics.")
 
+    
     # ==============================
     # 5) SIMILARIDADE DE COSSENO
     # ==============================
@@ -126,19 +137,6 @@ def main():
     else:
         print(f"⚠️ Cosine script not found at {COSINE_SCRIPT}")
 
-    # ==============================
-    # 6) MÉTRICA LÓGICA: CRIAR REGISTRO E CONFIG
-    # ==============================
-    logic_metric_id = prov.create_logic_metric(
-        experiment_id=experiment_id,
-        num_trials=1,          # mantemos 1 só por compatibilidade,
-        predicate_config={},   # será atualizado pelo script 01
-        rules_config={},       # será atualizado pelo script 02
-        facts_config={},       # será atualizado pelo script 03
-    )
-
-    os.environ["LOGIC_METRIC_ID"] = str(logic_metric_id)
-    print(f"🧠 logic_metric criado com ID={logic_metric_id}")
 
     # 6.1) Extrair o esquema de predicados
     print("\n======== First-Order Logic – Predicate Schema ========")
@@ -177,42 +175,8 @@ def main():
     else:
         print(f"⚠️ LLM judge script not found at {LLM_JUDGE_SCRIPT}")
 
-    # ==============================
-    # 8) RESUMO PARA PROVENIÊNCIA
-    # ==============================
-
-    # ---------- COSINE ----------
-    if COSINE_SUMMARY_CSV.exists():
-        cos_df = pd.read_csv(COSINE_SUMMARY_CSV, index_col="label")
-        cosine_summary = {}
-        for label in cos_df.index:
-            row = cos_df.loc[label]
-            cosine_summary[label] = {
-                "mean": float(row["mean"]),
-                "std": float(0.0 if pd.isna(row["std"]) else row["std"]),
-                "count": int(row["count"]),
-            }
-    else:
-        cosine_summary = None
-        print(f"⚠️ Cosine summary CSV not found at {COSINE_SUMMARY_CSV}")
-
-    # ---------- LOGIC ----------
-    # Agora a métrica lógica é avaliada principalmente via matriz de confusão
-    # e comparação com o LLM-judge. Podemos registrar apenas que existe uma
-    # configuração/execução, mas não calculamos F1 médio aqui.
-    logic_summary = None
-
-    prov.update_experiment_summaries(
-        experiment_id=experiment_id,
-        cosine_summary=cosine_summary,
-        logic_summary=logic_summary,
-    )
-    prov.close()
-
-    print("📊 Overview de métricas salvo na tabela experiment.")
-
     # Se quiser rodar a análise automática, descomente:
-    # run_script(ANALYSIS_SCRIPT)
+    run_script(ANALYSIS_SCRIPT)
 
     print("\n✅ Main experiment finished.")
 

@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 from typing import Dict, List, Tuple, Set, Any
+import shutil
 
 import pandas as pd
 import os
@@ -8,11 +9,13 @@ import sys
 
 THIS_FILE = Path(__file__).resolve()
 PROJECT_ROOT = THIS_FILE.parents[2]
+RECORDS_ROOT = PROJECT_ROOT / "records"
+
 
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.append(str(PROJECT_ROOT))
 
-# from provenance import ProvenanceDB  # ← removido por enquanto
+from provenance import ProvenanceDB
 
 # ================== CONFIGURAÇÕES ==================
 
@@ -317,18 +320,13 @@ def main():
 
             print(f"   Processed {line_idx} explanations...")
 
-            # 🔇 Proveniência removida desta versão para simplificar a métrica
-            # Se quiser, depois ajustamos ProvenanceDB para registrar:
-            # - coverage
-            # - logic_label
-            # - closure_chunk / intersection, etc.
 
     # Converte para DataFrame e salva CSV
     df = pd.DataFrame(results_rows)
     df.to_csv(OUTPUT_CSV, index=False)
     print(f"\n✅ Logical classification saved to: {OUTPUT_CSV}")
 
-        # ===================== CONFUSION MATRIX =====================
+    # ===================== CONFUSION MATRIX =====================
     if not df.empty:
         print("\n📊 Confusion between dataset label (TRUE) and logic_label (PREDICTED):")
 
@@ -356,6 +354,78 @@ def main():
         
         long_df.to_csv(LONG_SUMMARY, index=False)
         print(f"📁 Long-format confusion saved to: {LONG_SUMMARY}")
+        
+    # ============ Proveniência (first_order_logic) ============
+
+    # 1) Recuperar IDs do ambiente
+    experiment_id_env = os.environ.get("EXPERIMENT_ID")
+    xai_dataset_id_env = os.environ.get("XAI_DATASET_ID")
+    predicate_id_env = os.environ.get("PREDICATE_ID")
+    rules_id_env = os.environ.get("RULES_ID")
+    facts_id_env = os.environ.get("FACTS_ID")
+
+    missing = [
+        name for name, value in [
+            ("EXPERIMENT_ID", experiment_id_env),
+            ("XAI_DATASET_ID", xai_dataset_id_env),
+            ("PREDICATE_ID", predicate_id_env),
+            ("RULES_ID", rules_id_env),
+            ("FACTS_ID", facts_id_env),
+        ] if value is None
+    ]
+    if missing:
+        print(f"⚠️ Variáveis de ambiente faltando ({', '.join(missing)}); pulando registro em 'first_order_logic'.")
+        return
+
+    try:
+        experiment_id = int(experiment_id_env)
+        xai_dataset_id = int(xai_dataset_id_env)
+        predicate_id = int(predicate_id_env)
+        rules_id = int(rules_id_env)
+        facts_id = int(facts_id_env)
+    except ValueError:
+        print("⚠️ IDs inválidos em ambiente; pulando registro em 'first_order_logic'.")
+        return
+
+    # 2) Definir caminho em records/experiments/{experiment_id}/fol/...
+    records_dir = RECORDS_ROOT / "experiments" / str(experiment_id) / "fol"
+    records_dir.mkdir(parents=True, exist_ok=True)
+
+    fol_records_rel = f"records/experiments/{experiment_id}/fol/{OUTPUT_CSV.name}"
+    fol_records_abs = PROJECT_ROOT / fol_records_rel
+
+    if OUTPUT_CSV.exists():
+        shutil.copy2(OUTPUT_CSV, fol_records_abs)
+    else:
+        print(f"⚠️ LOGIC_RESULTS_CSV não encontrado em {OUTPUT_CSV}; não será possível registrar o path corretamente.")
+        return
+
+    # 3) Construir dicionário de thresholds/config da métrica (se houver)
+    #    Se você tiver constantes como:
+    #    F1_THRESHOLD, PRECISION_THRESHOLD, RECALL_THRESHOLD, etc., coloque aqui.
+    #    Caso contrário, podemos registrar um dict vazio {}.
+
+    thresholds = {
+        "correct": THRESH_CORRECT,
+        "incomplete": THRESH_INCOMPLETE,
+    }
+
+    # 4) Registrar na tabela first_order_logic
+    try:
+        prov = ProvenanceDB()
+        fol_id = prov.insert_first_order_logic_run(
+            experiment_id=experiment_id,
+            xai_dataset_id=xai_dataset_id,
+            predicate_id=predicate_id,
+            rules_id=rules_id,
+            facts_id=facts_id,
+            thresholds=thresholds,
+            path=fol_records_rel,   
+        )
+        prov.close()
+        print(f"💾 First-order logic run registrada no banco com id={fol_id}")
+    except Exception as e:
+        print(f"⚠️ Erro ao registrar 'first_order_logic' no banco: {e}")
 
 
 

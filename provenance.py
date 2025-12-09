@@ -1,5 +1,3 @@
-# provenance.py
-
 import os
 import pymysql
 from pymysql.cursors import DictCursor
@@ -26,357 +24,334 @@ class ProvenanceDB:
         )
 
     # ============================================================
-    # EXPERIMENT
+    # hotpot_sample
     # ============================================================
 
-    def create_experiment(self, hotpot_path: str, seed: int, n_samples: int) -> int:
-        query = """
-            INSERT INTO experiment (hotpot_path, seed, n_samples)
+    def get_or_create_hotpot_sample(self,
+                                n_sample: int,
+                                seed: int) -> int:
+        """
+        Retorna o id de um registro em hotpot_sample que tenha
+        (n_sample, seed). Se não existir, cria com path vazio.
+        O path será atualizado depois.
+        """
+        select_query = """
+            SELECT id
+            FROM hotpot_sample
+            WHERE n_sample = %s
+            AND seed = %s
+            LIMIT 1
+        """
+        insert_query = """
+            INSERT INTO hotpot_sample (n_sample, seed, path)
             VALUES (%s, %s, %s)
         """
+
         with self.conn.cursor() as cur:
-            cur.execute(query, (hotpot_path, seed, n_samples))
+            cur.execute(select_query, (n_sample, seed))
+            row = cur.fetchone()
+            if row:
+                return row["id"]
+
+            # path vazio por enquanto; será atualizado depois
+            cur.execute(insert_query, (n_sample, seed, ""))
             return cur.lastrowid
+    
+    def update_hotpot_sample_path(self,
+                              hotpot_sample_id: int,
+                              path: str) -> None:
+        """
+        Atualiza o campo path de um hotpot_sample existente.
+        Espera path relativo, por ex: 'records/hotpot_sample/1/hotpot_sample.csv'
+        """
+        query = "UPDATE hotpot_sample SET path = %s WHERE id = %s"
+        with self.conn.cursor() as cur:
+            cur.execute(query, (path, hotpot_sample_id))
+
+
+    # ============================================================
+    # xai_dataset
+    # ============================================================
+
+    def get_or_create_xai_dataset(self,
+                              hotpot_sample_id: int,
+                              prompt: str,
+                              model: str,
+                              temperature: float) -> int:
+        """
+        Retorna o id de um xai_dataset que combina:
+        (hotpot_sample_id, prompt, model, temperature).
+        O path será definido/atualizado depois.
+        """
+        select_query = """
+            SELECT id
+            FROM xai_dataset
+            WHERE hotpot_sample_id = %s
+            AND model = %s
+            AND temperature = %s
+            AND prompt = %s
+            LIMIT 1
+        """
+        insert_query = """
+            INSERT INTO xai_dataset (hotpot_sample_id, prompt, model, temperature, path)
+            VALUES (%s, %s, %s, %s, %s)
+        """
+
+        with self.conn.cursor() as cur:
+            cur.execute(
+                select_query,
+                (hotpot_sample_id, model, temperature, prompt),
+            )
+            row = cur.fetchone()
+            if row:
+                return row["id"]
+
+            # path vazio por enquanto
+            cur.execute(
+                insert_query,
+                (hotpot_sample_id, prompt, model, temperature, ""),
+            )
+            return cur.lastrowid
+   
+    def update_xai_dataset_path(self,
+                            xai_dataset_id: int,
+                            path: str) -> None:
+        """
+        Atualiza o campo path de um xai_dataset existente.
+        Espera path relativo, ex: 'records/xai_dataset/3/xai_dataset.jsonl'
+        """
+        query = "UPDATE xai_dataset SET path = %s WHERE id = %s"
+        with self.conn.cursor() as cur:
+            cur.execute(query, (path, xai_dataset_id))
+    
+    def get_latest_xai_dataset_for_hotpot_sample(self, hotpot_sample_id: int) -> int | None:
+        """
+        Retorna o id do xai_dataset mais recente associado a um dado hotpot_sample_id.
+        Assume que creating_dataset.py já registrou o dataset.
+        """
+        query = """
+            SELECT id
+            FROM xai_dataset
+            WHERE hotpot_sample_id = %s
+            ORDER BY created_at DESC
+            LIMIT 1
+        """
+        with self.conn.cursor() as cur:
+            cur.execute(query, (hotpot_sample_id,))
+            row = cur.fetchone()
+            return row["id"] if row else None
+
         
-    def update_experiment_hotpot_info(self, experiment_id: int,
-                                      hotpot_path: str,
-                                      seed: int,
-                                      n_samples: int) -> None:
-        query = """
-            UPDATE experiment
-            SET hotpot_path = %s,
-                seed = %s,
-                n_samples = %s
-            WHERE id = %s
-        """
-        with self.conn.cursor() as cur:
-            cur.execute(query, (hotpot_path, seed, n_samples, experiment_id))
-
-
     # ============================================================
-    # EXPERIMENT OVERVIEW (summaries de métricas)
+    # experiment
     # ============================================================
 
-    def update_experiment_summaries(self,
-                                    experiment_id: int,
-                                    jaccard_summary: Optional[Dict[str, Any]] = None,
-                                    cosine_summary: Optional[Dict[str, Any]] = None,
-                                    logic_summary: Optional[Dict[str, Any]] = None) -> None:
+    def create_experiment(self,
+                          hotpot_sample_id: int,
+                          xai_dataset_id: int) -> int:
         """
-        Atualiza os summaries de métricas na tabela experiment.
-        Cada summary deve ser um dict já serializável em JSON, por exemplo:
-        {
-          "correct":   {"mean": 0.8, "std": 0.05, "count": 10},
-          "incomplete":{"mean": 0.6, ...},
-          "incorrect": {...}
-        }
-        """
-        sets = []
-        params = []
-
-        if jaccard_summary is not None:
-            sets.append("jaccard_summary = %s")
-            params.append(json.dumps(jaccard_summary))
-
-        if cosine_summary is not None:
-            sets.append("cosine_summary = %s")
-            params.append(json.dumps(cosine_summary))
-
-        if logic_summary is not None:
-            sets.append("logic_summary = %s")
-            params.append(json.dumps(logic_summary))
-
-        if not sets:
-            return
-
-        query = f"""
-            UPDATE experiment
-            SET {", ".join(sets)}
-            WHERE id = %s
-        """
-        params.append(experiment_id)
-
-        with self.conn.cursor() as cur:
-            cur.execute(query, tuple(params))
-
-
-    # ============================================================
-    # CREATION (geração do dataset de explicabilidade)
-    # ============================================================
-
-    def create_creation(self,
-                        experiment_id: int,
-                        hotpotqa_sample: int,
-                        prompt: str,
-                        model: str,
-                        temperature: float) -> int:
-        """
-        Cria um registro na tabela 'creation' e retorna o ID.
+        Cria um novo experimento apontando para um hotpot_sample
+        e um xai_dataset específicos.
         """
         query = """
-            INSERT INTO creation (experiment_id, hotpotqa_sample, prompt, model, temperature)
-            VALUES (%s, %s, %s, %s, %s)
+            INSERT INTO experiment (hotpot_sample_id, xai_dataset_id)
+            VALUES (%s, %s)
         """
-
         with self.conn.cursor() as cur:
-            cur.execute(
-                query,
-                (experiment_id, hotpotqa_sample, prompt, model, temperature),
-            )
+            cur.execute(query, (hotpot_sample_id, xai_dataset_id))
             return cur.lastrowid
 
     # ============================================================
-    # XAI DATASET ROW
+    # validity
     # ============================================================
 
-    def insert_xai_row(self,
-                       creation_id: int,
-                       sample_id: str,
-                       original_dataset_name: str,
-                       question: str,
-                       answer: str,
-                       chunk: str,
-                       explanation: str,
-                       meta: Optional[Dict[str, Any]] = None) -> int:
-
-        query = """
-            INSERT INTO xai_dataset
-            (creation_id, sample_id, original_dataset_name, question, answer, chunk, explanation, meta)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+    def insert_validity(self,
+                        xai_dataset_id: int,
+                        embedding: str,
+                        similarity_threshold: float,
+                        output: bool) -> int:
         """
-
-        meta_json = json.dumps(meta or {})
-
-        with self.conn.cursor() as cur:
-            cur.execute(
-                query,
-                (
-                    creation_id,
-                    str(sample_id),
-                    original_dataset_name,
-                    question,
-                    answer,
-                    chunk,
-                    explanation,
-                    meta_json,
-                ),
-            )
-            return cur.lastrowid
-
-    # ============================================================
-    # VALIDATION
-    # ============================================================
-
-    def insert_validation(self, experiment_id: int, embedding_model: str, threshold: float,
-                          is_valid: bool, details: Optional[Dict[str, Any]] = None) -> int:
-
-        query = """
-            INSERT INTO validation (experiment_id, embedding_model, threshold, is_valid, details)
-            VALUES (%s, %s, %s, %s, %s)
-        """
-
-        details_json = json.dumps(details or {})
-
-        with self.conn.cursor() as cur:
-            cur.execute(query, (experiment_id, embedding_model, threshold, is_valid, details_json))
-            return cur.lastrowid
-
-    # ============================================================
-    # COSINE RESULTS
-    # ============================================================
-
-    def insert_cosine_result(self,
-                             experiment_id: int,
-                             sample_id: str,
-                             label: str,
-                             cosine: float,
-                             metadata: Optional[Dict[str, Any]] = None) -> int:
-        """
-        Registra a similaridade de Cosine para UMA explicação
-        (uma linha do dataset flatten).
+        Registra o resultado da validação do dataset XAI.
+        Pode haver múltiplas validações para o mesmo xai_dataset
+        com embeddings/thresholds diferentes.
         """
         query = """
-            INSERT INTO cosine_results
-            (experiment_id, sample_id, label, cosine, metadata)
-            VALUES (%s, %s, %s, %s, %s)
-        """
-
-        metadata_json = json.dumps(metadata or {})
-
-        with self.conn.cursor() as cur:
-            cur.execute(
-                query,
-                (experiment_id, str(sample_id), str(label), float(cosine), metadata_json),
-            )
-            return cur.lastrowid
-
-    # ============================================================
-    # JACCARD RESULTS
-    # ============================================================
-
-    def insert_jaccard_result(self,
-                              experiment_id: int,
-                              sample_id: str,
-                              label: str,
-                              jaccard: float,
-                              metadata: Optional[Dict[str, Any]] = None) -> int:
-        """
-        Registra a similaridade de Jaccard para UMA explicação
-        (uma linha do dataset flatten).
-        """
-        query = """
-            INSERT INTO jaccard_results
-            (experiment_id, sample_id, label, jaccard, metadata)
-            VALUES (%s, %s, %s, %s, %s)
-        """
-
-        metadata_json = json.dumps(metadata or {})
-
-        with self.conn.cursor() as cur:
-            cur.execute(
-                query,
-                (experiment_id, str(sample_id), str(label), float(jaccard), metadata_json),
-            )
-            return cur.lastrowid
-    # ============================================================
-    # LOGIC METRIC CONFIG
-    # ============================================================
-
-    def insert_logic_metric(self, experiment_id: int,
-                            num_trials: int,
-                            predicate_config: Dict,
-                            rules_config: Dict) -> int:
-
-        query = """
-            INSERT INTO logic_metric
-            (experiment_id, num_trials, predicate_config, rules_config)
+            INSERT INTO validity (xai_dataset_id, embedding, similarity_threshold, output)
             VALUES (%s, %s, %s, %s)
         """
-
-        with self.conn.cursor() as cur:
-            cur.execute(query, (
-                experiment_id,
-                num_trials,
-                json.dumps(predicate_config),
-                json.dumps(rules_config),
-            ))
-            return cur.lastrowid
-
-        # ============================================================
-    # LOGIC METRIC (configuração da métrica lógica)
-    # ============================================================
-
-    def create_logic_metric(self,
-                            experiment_id: int,
-                            num_trials: int,
-                            predicate_config: Optional[Dict[str, Any]] = None,
-                            rules_config: Optional[Dict[str, Any]] = None,
-                            facts_config: Optional[Dict[str, Any]] = None) -> int:
-        """
-        Cria um registro na tabela logic_metric para um experimento.
-        Você pode criar já com alguns configs ou com tudo None e ir atualizando depois.
-        """
-        query = """
-            INSERT INTO logic_metric (experiment_id, num_trials, predicate_config, rules_config, facts_config)
-            VALUES (%s, %s, %s, %s, %s)
-        """
-
         with self.conn.cursor() as cur:
             cur.execute(
                 query,
-                (
-                    experiment_id,
-                    num_trials,
-                    json.dumps(predicate_config or {}),
-                    json.dumps(rules_config or {}),
-                    json.dumps(facts_config or {}),
-                ),
+                (xai_dataset_id, embedding, similarity_threshold, output),
             )
             return cur.lastrowid
 
-    def update_logic_metric_configs(self,
-                                    logic_metric_id: int,
-                                    predicate_config: Optional[Dict[str, Any]] = None,
-                                    rules_config: Optional[Dict[str, Any]] = None,
-                                    facts_config: Optional[Dict[str, Any]] = None) -> None:
-        """
-        Atualiza parcialmente os configs de logic_metric.
-        Você pode chamar várias vezes (ex: depois do script de predicados, depois do de regras, etc.).
-        Só os parâmetros não-nulos serão atualizados.
-        """
-        sets = []
-        params = []
-
-        if predicate_config is not None:
-            sets.append("predicate_config = %s")
-            params.append(json.dumps(predicate_config))
-
-        if rules_config is not None:
-            sets.append("rules_config = %s")
-            params.append(json.dumps(rules_config))
-
-        if facts_config is not None:
-            sets.append("facts_config = %s")
-            params.append(json.dumps(facts_config))
-
-        if not sets:
-            return  # nada pra atualizar
-
-        query = f"""
-            UPDATE logic_metric
-            SET {", ".join(sets)}
-            WHERE id = %s
-        """
-        params.append(logic_metric_id)
-
-        with self.conn.cursor() as cur:
-            cur.execute(query, tuple(params))
-
-    
-        # ============================================================
-    # LOGIC RESULT (por explicação e trial)
+    # ============================================================
+    # cosine_similarity
     # ============================================================
 
-    def insert_logic_result(self,
-                            experiment_id: int,
-                            logic_metric_id: int,
-                            trial_number: int,
-                            sample_id: str,
-                            label: str,
-                            precision_result: float,
-                            recall_result: float,
-                            f1_result: float,
-                            facts: Optional[Dict[str, Any]] = None,
-                            metadata: Optional[Dict[str, Any]] = None) -> int:
+    def insert_cosine_similarity_run(self,
+                                     experiment_id: int,
+                                     xai_dataset_id: int,
+                                     embedding: str,
+                                     path: str) -> int:
         """
-        Registra o resultado da métrica lógica para UMA explicação em UM trial.
+        Registra uma execução da métrica de similaridade de cosseno
+        (um arquivo CSV de resultados).
         """
         query = """
-            INSERT INTO logic_result
-            (experiment_id, logic_metric_id, trial_number,
-             sample_id, label,
-             precision_result, recall_result, f1_result,
-             facts, metadata)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            INSERT INTO cosine_similarity (experiment_id, xai_dataset_id, embedding, path)
+            VALUES (%s, %s, %s, %s)
+        """
+        with self.conn.cursor() as cur:
+            cur.execute(
+                query,
+                (experiment_id, xai_dataset_id, embedding, path),
+            )
+            return cur.lastrowid
+        
+    # ============================================================
+    # llm_judge
+    # ============================================================
+
+    def insert_llm_judge_run(self,
+                             experiment_id: int,
+                             xai_dataset_id: int,
+                             model: str,
+                             temperature: float,
+                             prompt: str,
+                             path: str) -> int:
+        """
+        Registra uma execução da métrica de LLM como juiz,
+        apontando para o CSV com os julgamentos.
+        """
+        query = """
+            INSERT INTO llm_judge (experiment_id, xai_dataset_id, model, temperature, prompt, path)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """
+        with self.conn.cursor() as cur:
+            cur.execute(
+                query,
+                (experiment_id, xai_dataset_id, model, temperature, prompt, path),
+            )
+            return cur.lastrowid
+
+    # ============================================================
+    # predicates
+    # ============================================================
+
+    def insert_predicates(self,
+                          hotpot_sample_id: int,
+                          model: str,
+                          temperature: float,
+                          prompt: str,
+                          path: str) -> int:
+        """
+        Registra uma listagem de predicados lógicos gerada a partir
+        de uma amostra de HotpotQA.
+        """
+        query = """
+            INSERT INTO predicates (hotpot_sample_id, model, temperature, prompt, path)
+            VALUES (%s, %s, %s, %s, %s)
+        """
+        with self.conn.cursor() as cur:
+            cur.execute(
+                query,
+                (hotpot_sample_id, model, temperature, prompt, path),
+            )
+            return cur.lastrowid
+
+    # ============================================================
+    # rules
+    # ============================================================
+
+    def insert_rules(self,
+                     predicate_id: int,
+                     model: str,
+                     temperature: float,
+                     prompt: str,
+                     path: str) -> int:
+        """
+        Registra o arquivo de regras lógicas derivadas dos predicados.
+        """
+        query = """
+            INSERT INTO rules (predicate_id, model, temperature, prompt, path)
+            VALUES (%s, %s, %s, %s, %s)
+        """
+        with self.conn.cursor() as cur:
+            cur.execute(
+                query,
+                (predicate_id, model, temperature, prompt, path),
+            )
+            return cur.lastrowid
+        
+    # ============================================================
+    # facts
+    # ============================================================
+
+    def insert_facts(self,
+                     predicate_id: int,
+                     xai_dataset_id: int,
+                     model: str,
+                     temperature: float,
+                     prompt: Optional[Dict[str, Any]],
+                     path: str) -> int:
+        """
+        Registra o arquivo de fatos extraídos (para o dataset XAI),
+        associados a um conjunto de predicados.
+        """
+        query = """
+            INSERT INTO facts (predicate_id, xai_dataset_id, model, temperature, prompt, path)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """
+        with self.conn.cursor() as cur:
+            cur.execute(
+                query,
+                (predicate_id, xai_dataset_id, model, temperature, prompt, path),
+            )
+            return cur.lastrowid
+
+
+    # ============================================================
+    # first_order_logic
+    # ============================================================
+
+    def insert_first_order_logic_run(self,
+                                     experiment_id: int,
+                                     xai_dataset_id: int,
+                                     predicate_id: int,
+                                     rules_id: int,
+                                     facts_id: int,
+                                     thresholds: Optional[Dict[str, Any]],
+                                     path: str) -> int:
+        """
+        Registra uma execução da métrica de lógica de primeira ordem (FOL),
+        apontando para:
+        - o experimento
+        - o dataset XAI
+        - os predicados, regras e fatos usados
+        - thresholds (JSON)
+        - caminho do CSV de resultados
+        """
+        query = """
+            INSERT INTO first_order_logic
+                (experiment_id, xai_dataset_id, predicate_id, rules_id, facts_id, thresholds, path)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
         """
 
-        facts_json = json.dumps(facts or {})
-        metadata_json = json.dumps(metadata or {})
+        thresholds_json = json.dumps(thresholds or {})
 
         with self.conn.cursor() as cur:
             cur.execute(
                 query,
                 (
                     experiment_id,
-                    logic_metric_id,
-                    trial_number,
-                    str(sample_id),
-                    str(label),
-                    float(precision_result),
-                    float(recall_result),
-                    float(f1_result),
-                    facts_json,
-                    metadata_json,
+                    xai_dataset_id,
+                    predicate_id,
+                    rules_id,
+                    facts_id,
+                    thresholds_json,
+                    path,
                 ),
             )
             return cur.lastrowid

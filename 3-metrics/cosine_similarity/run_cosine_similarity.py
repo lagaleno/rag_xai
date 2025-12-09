@@ -4,6 +4,7 @@ import json
 import pandas as pd
 from tqdm.auto import tqdm
 from sentence_transformers import SentenceTransformer, util
+import shutil
 # Import functions from utils file
 import sys
 from pathlib import Path
@@ -14,6 +15,7 @@ from utils import build_examples, flatten_examples
 
 # ==== IMPORT PROVENANCE ====
 PROJECT_ROOT = THIS_FILE.parents[2]
+RECORDS_ROOT = PROJECT_ROOT / "records"
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.append(str(PROJECT_ROOT))
 
@@ -94,39 +96,39 @@ def main():
     print("\n📊 Cosine similarity summary by label:")
     print(summary)
 
-    # ========= PROVENIÊNCIA: salvar cada linha =========
+    # ============ Proveniência (cosine_similarity) ============
 
-    experiment_id_env = os.getenv("EXPERIMENT_ID")
-    if experiment_id_env is None:
-        print("⚠️ EXPERIMENT_ID not found in environment. Skipping Cosine provenance.")
-        return
+    experiment_id_env = os.environ.get("EXPERIMENT_ID")
+    xai_dataset_id_env = os.environ.get("XAI_DATASET_ID")
 
-    experiment_id = int(experiment_id_env)
-    prov = ProvenanceDB()
+    if experiment_id_env is not None and xai_dataset_id_env is not None:
+        try:
+            experiment_id = int(experiment_id_env)
+            xai_dataset_id = int(xai_dataset_id_env)
 
-    inserted = 0
-    for _, row in df.iterrows():
-        sample_id = row.get("dataset_id")
-        label = row.get("label", "")
-        cosine = row.get("cosine_similarity", 0.0)
+            # Caminho em records/experiments/{experiment_id}/cosine/...
+            records_dir = RECORDS_ROOT / "experiments" / str(experiment_id) / "cosine"
+            records_dir.mkdir(parents=True, exist_ok=True)
 
-        metadata = {
-            "embedding_model": EMBEDDING_MODEL,
-            "chunk_len": len(str(row.get("chunk_text", ""))),
-            "expl_len": len(str(row.get("explanation_text", ""))),
-        }
+            # Vamos copiar o CSV de resultados detalhados
+            cosine_records_rel = f"records/experiments/{experiment_id}/cosine/{CSV_OUT.name}"
+            cosine_records_abs = PROJECT_ROOT / cosine_records_rel
 
-        prov.insert_cosine_result(
-            experiment_id=experiment_id,
-            sample_id=str(sample_id),
-            label=str(label),
-            cosine=float(cosine),
-            metadata=metadata,
-        )
-        inserted += 1
+            shutil.copy2(CSV_OUT, cosine_records_abs)
 
-    print(f"🧮 Cosine results registrados no banco: {inserted} linhas.")
-    prov.close()
+            prov = ProvenanceDB()
+            prov.insert_cosine_similarity_run(
+                experiment_id=experiment_id,
+                xai_dataset_id=xai_dataset_id,
+                embedding=EMBEDDING_MODEL,
+                path=cosine_records_rel,  # path relativo
+            )
+            prov.close()
+            print(f"💾 Cosine similarity registrada no banco para experiment_id={experiment_id}")
+        except Exception as e:
+            print(f"⚠️ Erro ao registrar cosine_similarity no banco: {e}")
+    else:
+        print("⚠️ EXPERIMENT_ID ou XAI_DATASET_ID não definido no ambiente; pulando registro de cosine_similarity.")
 
 if __name__ == "__main__":
     main()

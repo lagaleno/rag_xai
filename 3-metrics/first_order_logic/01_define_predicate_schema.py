@@ -3,12 +3,15 @@ import os
 import requests
 from pathlib import Path
 import sys
+import shutil
 
 import pandas as pd
 
 # Caminhos
 THIS_FILE = Path(__file__).resolve()
 PROJECT_ROOT = THIS_FILE.parents[2]
+RECORDS_ROOT = PROJECT_ROOT / "records"
+
 
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.append(str(PROJECT_ROOT))
@@ -271,32 +274,52 @@ def main():
         usage = p.get("usage_count", 0)
         print(f"- {name}({args})  [{usage}]")
 
-    # ====== Proveniência ======
-    logic_metric_id_env = os.getenv("LOGIC_METRIC_ID")
-    if logic_metric_id_env is None:
-        print("⚠️ LOGIC_METRIC_ID não encontrado no ambiente. Pulando registro de predicate_config.")
+    # ============ Proveniência (predicates) ============
+
+    # 1) Recuperar HOTPOT_SAMPLE_ID do ambiente
+    hotpot_sample_id_env = os.environ.get("HOTPOT_SAMPLE_ID")
+
+    if hotpot_sample_id_env is None:
+        print("⚠️ HOTPOT_SAMPLE_ID não definido no ambiente; pulando registro em 'predicates'.")
         return
 
-    logic_metric_id = int(logic_metric_id_env)
+    try:
+        hotpot_sample_id = int(hotpot_sample_id_env)
+    except ValueError:
+        print(f"⚠️ HOTPOT_SAMPLE_ID inválido: {hotpot_sample_id_env!r}; pulando registro em 'predicates'.")
+        return
 
-    predicate_config = {
-        "model": LLAMA_MODEL_NAME,
-        "temperature": TEMPERATURE,
-        "batch_size": BATCH_SIZE,
-        "dataset_rows": n_rows,
-        "num_predicates": len(final_schema["predicates"]),
-        # Não estamos guardando IDs específicos de QA, pois usamos o dataset inteiro.
-        "schema": final_schema,
-    }
+    # 2) Definir caminho em records/predicates/...
+    #    Aqui podemos organizar por hotpot_sample_id
+    records_dir = RECORDS_ROOT / "predicates" / str(hotpot_sample_id)
+    records_dir.mkdir(parents=True, exist_ok=True)
 
-    prov = ProvenanceDB()
-    prov.update_logic_metric_configs(
-        logic_metric_id=logic_metric_id,
-        predicate_config=predicate_config,
-    )
-    prov.close()
+    # Nome do arquivo dentro de records
+    schema_records_rel = f"records/predicates/{hotpot_sample_id}/predicate_schema.json"
+    schema_records_abs = PROJECT_ROOT / schema_records_rel
 
-    print(f"🧠 predicate_config registrado no banco para logic_metric_id={logic_metric_id}")
+    # 3) Copiar o arquivo original para a pasta records
+    if SCHEMA_OUT.exists():
+        shutil.copy2(SCHEMA_OUT, schema_records_abs)
+    else:
+        print(f"⚠️ SCHEMA_FILE não encontrado em {SCHEMA_OUT}; não será possível registrar o path corretamente.")
+        return
+
+    # 4) Registrar na tabela predicates
+    try:
+        prov = ProvenanceDB()
+        predicate_id = prov.insert_predicates(
+            hotpot_sample_id=hotpot_sample_id,
+            model=LLAMA_MODEL_NAME,      
+            temperature=TEMPERATURE,   
+            prompt=prompt,  
+            path=schema_records_rel,   
+        )
+        os.environ["PREDICATE_ID"] = str(predicate_id)
+        prov.close()
+        print(f"💾 Predicates registrados no banco com id={predicate_id} para hotpot_sample_id={hotpot_sample_id}")
+    except Exception as e:
+        print(f"⚠️ Erro ao registrar 'predicates' no banco: {e}")
 
 
 if __name__ == "__main__":
