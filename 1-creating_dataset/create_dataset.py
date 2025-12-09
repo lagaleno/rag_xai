@@ -34,7 +34,7 @@ LLAMA_MODEL = "llama3"  # troque se usar outro (ex: "llama3:8b")
 os.environ["XAI_MODEL"] = LLAMA_MODEL # prov
 
 # Quantidade de amostras de HotpotQA
-N_SAMPLES = 10
+N_SAMPLES = 100
 os.environ["HOTPOT_N_SAMPLES"] = str(N_SAMPLES) # prov
 
 SEED = 42

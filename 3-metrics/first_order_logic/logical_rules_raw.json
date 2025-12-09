@@ -1,0 +1,206 @@
+{
+  "rules": [
+    {
+      "name": "rule1",
+      "description": "Entity is either Person, Organization or Location.",
+      "premises": [
+        {
+          "predicate": "Entity",
+          "args": [
+            "X1"
+          ]
+        }
+      ],
+      "conclusion": {
+        "predicate": "Type",
+        "args": [
+          "X1",
+          "category"
+        ]
+      }
+    },
+    {
+      "name": "rule2",
+      "description": "Person is either Entity or Organization.",
+      "premises": [
+        {
+          "predicate": "Person",
+          "args": [
+            "X1"
+          ]
+        }
+      ],
+      "conclusion": {
+        "predicate": "Entity",
+        "args": [
+          "X1"
+        ]
+      }
+    },
+    {
+      "name": "rule3",
+      "description": "Organization is either Entity or Location.",
+      "premises": [
+        {
+          "predicate": "Organization",
+          "args": [
+            "X1"
+          ]
+        }
+      ],
+      "conclusion": {
+        "predicate": "Entity",
+        "args": [
+          "X1"
+        ]
+      }
+    },
+    {
+      "name": "rule4",
+      "description": "Location is either Entity or Organization.",
+      "premises": [
+        {
+          "predicate": "Location",
+          "args": [
+            "X1"
+          ]
+        }
+      ],
+      "conclusion": {
+        "predicate": "Entity",
+        "args": [
+          "X1"
+        ]
+      }
+    },
+    {
+      "name": "rule5",
+      "description": "Work is either Entity or Organization.",
+      "premises": [
+        {
+          "predicate": "Work",
+          "args": [
+            "X1"
+          ]
+        }
+      ],
+      "conclusion": {
+        "predicate": "Entity",
+        "args": [
+          "X1"
+        ]
+      }
+    },
+    {
+      "name": "rule6",
+      "description": "Date is either Entity or Location.",
+      "premises": [
+        {
+          "predicate": "Date",
+          "args": [
+            "X1"
+          ]
+        }
+      ],
+      "conclusion": {
+        "predicate": "Entity",
+        "args": [
+          "X1"
+        ]
+      }
+    },
+    {
+      "name": "rule7",
+      "description": "Type is either Entity or Work.",
+      "premises": [
+        {
+          "predicate": "Type",
+          "args": [
+            "X1"
+          ]
+        }
+      ],
+      "conclusion": {
+        "predicate": "Entity",
+        "args": [
+          "X1"
+        ]
+      }
+    },
+    {
+      "name": "rule8",
+      "description": "Event is either Entity or Work.",
+      "premises": [
+        {
+          "predicate": "Event",
+          "args": [
+            "X1"
+          ]
+        }
+      ],
+      "conclusion": {
+        "predicate": "Entity",
+        "args": [
+          "X1"
+        ]
+      }
+    },
+    {
+      "name": "rule9",
+      "description": "Factoid is either Entity or Work.",
+      "premises": [
+        {
+          "predicate": "Factoid",
+          "args": [
+            "X1",
+            "X2"
+          ]
+        }
+      ],
+      "conclusion": {
+        "predicate": "Entity",
+        "args": [
+          "X1"
+        ]
+      }
+    },
+    {
+      "name": "rule10",
+      "description": "MultiHop is either Entity or Work.",
+      "premises": [
+        {
+          "predicate": "MultiHop",
+          "args": [
+            "X1",
+            "X2",
+            "X3"
+          ]
+        }
+      ],
+      "conclusion": {
+        "predicate": "Entity",
+        "args": [
+          "X1"
+        ]
+      }
+    },
+    {
+      "name": "rule11",
+      "description": "Relationship is either Entity or Work.",
+      "premises": [
+        {
+          "predicate": "Relationship",
+          "args": [
+            "X1"
+          ]
+        }
+      ],
+      "conclusion": {
+        "predicate": "Entity",
+        "args": [
+          "X1"
+        ]
+      }
+    }
+  ]
+}

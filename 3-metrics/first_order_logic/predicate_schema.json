@@ -1,0 +1,277 @@
+{
+  "predicates": [
+    {
+      "name": "Entity",
+      "args": [
+        "entity_type"
+      ],
+      "description": "A general entity, such as a person, place, or thing.",
+      "usage_count": 6
+    },
+    {
+      "name": "Work",
+      "args": [
+        "work_type",
+        "author"
+      ],
+      "description": "A creative work, such as a book, movie, or song.",
+      "usage_count": 1
+    },
+    {
+      "name": "Person",
+      "args": [
+        "person_type"
+      ],
+      "description": "An individual human being.",
+      "usage_count": 5
+    },
+    {
+      "name": "Organization",
+      "args": [
+        "org_type"
+      ],
+      "description": "A group of people with a shared purpose, such as a company or government agency.",
+      "usage_count": 4
+    },
+    {
+      "name": "Location",
+      "args": [
+        "location_type"
+      ],
+      "description": "A place or geographic area.",
+      "usage_count": 5
+    },
+    {
+      "name": "Date",
+      "args": [
+        "date_type"
+      ],
+      "description": "A specific point in time, such as a birthday or anniversary.",
+      "usage_count": 5
+    },
+    {
+      "name": "Entity",
+      "args": [
+        "type",
+        "id"
+      ],
+      "description": "A thing or concept that exists in the world.",
+      "usage_count": 1
+    },
+    {
+      "name": "Person",
+      "args": [
+        "type",
+        "id"
+      ],
+      "description": "An individual human being.",
+      "usage_count": 1
+    },
+    {
+      "name": "Place",
+      "args": [
+        "type",
+        "id"
+      ],
+      "description": "A location or geographic area.",
+      "usage_count": 1
+    },
+    {
+      "name": "Work",
+      "args": [
+        "type",
+        "id"
+      ],
+      "description": "A creative or intellectual product, such as a book, movie, or song.",
+      "usage_count": 1
+    },
+    {
+      "name": "Organization",
+      "args": [
+        "type",
+        "id"
+      ],
+      "description": "A group of people with a shared purpose or goal.",
+      "usage_count": 1
+    },
+    {
+      "name": "Type",
+      "args": [
+        "category",
+        "sub_category"
+      ],
+      "description": "A classification or category for something.",
+      "usage_count": 1
+    },
+    {
+      "name": "Date",
+      "args": [
+        "year",
+        "month",
+        "day"
+      ],
+      "description": "A specific point in time.",
+      "usage_count": 1
+    },
+    {
+      "name": "Work",
+      "args": [
+        "work_type"
+      ],
+      "description": "Refers to a creative work (book, movie, song, etc.)",
+      "usage_count": 5
+    },
+    {
+      "name": "Type",
+      "args": [
+        "type_label"
+      ],
+      "description": "Classifies something into a specific category",
+      "usage_count": 1
+    },
+    {
+      "name": "Date",
+      "args": [
+        "date_format"
+      ],
+      "description": "Indicates a specific point in time",
+      "usage_count": 1
+    },
+    {
+      "name": "Entity",
+      "args": [
+        "type"
+      ],
+      "description": "Identifies a specific entity (person, place, thing, etc.)",
+      "usage_count": 2
+    },
+    {
+      "name": "Person",
+      "args": [
+        "entity_type",
+        "nationality"
+      ],
+      "description": "Describes a person with their type and nationality",
+      "usage_count": 2
+    },
+    {
+      "name": "Work",
+      "args": [
+        "title",
+        "genre"
+      ],
+      "description": "Identifies a work (book, movie, etc.) by its title and genre",
+      "usage_count": 1
+    },
+    {
+      "name": "Organization",
+      "args": [
+        "type"
+      ],
+      "description": "Describes an organization with its type",
+      "usage_count": 2
+    },
+    {
+      "name": "Location",
+      "args": [
+        "type",
+        "city"
+      ],
+      "description": "Identifies a location by its type and city",
+      "usage_count": 1
+    },
+    {
+      "name": "Date",
+      "args": [
+        "year",
+        "month"
+      ],
+      "description": "Describes a date with its year and month",
+      "usage_count": 1
+    },
+    {
+      "name": "Place",
+      "args": [
+        "location_type"
+      ],
+      "description": "A geographic location",
+      "usage_count": 1
+    },
+    {
+      "name": "Work",
+      "args": [
+        "type",
+        "medium"
+      ],
+      "description": "A creative or intellectual product",
+      "usage_count": 1
+    },
+    {
+      "name": "Type",
+      "args": [
+        "category"
+      ],
+      "description": "A classification or category",
+      "usage_count": 1
+    },
+    {
+      "name": "Date",
+      "args": [
+        "format"
+      ],
+      "description": "A point in time",
+      "usage_count": 1
+    },
+    {
+      "name": "Organization",
+      "args": [
+        "organization_type"
+      ],
+      "description": "An organization or institution mentioned in the text.",
+      "usage_count": 2
+    },
+    {
+      "name": "Event",
+      "args": [
+        "event_type"
+      ],
+      "description": "An event or occurrence mentioned in the text.",
+      "usage_count": 2
+    },
+    {
+      "name": "Factoid",
+      "args": [
+        "entity",
+        "type"
+      ],
+      "description": "A statement about a specific entity or concept.",
+      "usage_count": 1
+    },
+    {
+      "name": "MultiHop",
+      "args": [
+        "entity",
+        "relation",
+        "entity"
+      ],
+      "description": "A relationship between two entities that requires multiple hops to establish.",
+      "usage_count": 1
+    },
+    {
+      "name": "Relationship",
+      "args": [
+        "rel_type"
+      ],
+      "description": "A relationship between two entities, such as 'was born in' or 'is a member of'.",
+      "usage_count": 1
+    },
+    {
+      "name": "Type",
+      "args": [
+        "type_type"
+      ],
+      "description": "Classifies a concept or category mentioned in the passage.",
+      "usage_count": 1
+    }
+  ]
+}
