@@ -9,7 +9,7 @@ The workflow includes:
 - validating explanations using embedding similarity  
 - running a complete multi-metric experiment:
   - cosine similarity  
-  - Jaccard similarity  
+  - llm as a judge
   - logical inference (predicate schema + rules + fact extraction + inference engine)  
 - aggregating and visualizing results  
 - **tracking full provenance** (experiment metadata, creation events, metrics, intermediate steps) using a **MariaDB database running inside Docker**
@@ -102,36 +102,45 @@ Adminer URL: http://localhost:8080
 ```
 project_root/
 │
-├── provenance.py                     # Provenance logging API for all scripts
+├── provenance.py                         # Provenance API
 │
 ├── db/
-│   ├── init/schema.sql               # Tables created automatically by Docker
-│   └── data/                         # Docker-managed database files
+│   ├── init/schema.sql                   # Auto-loaded by Docker
 │
 ├── 0-utils/
-│   ├── get_hotpotqa.py               # Downloads HotpotQA and updates provenance
+│   ├── get_hotpotqa.py                   # Downloads HotpotQA (only if missing)
 │   └── hotpotqa_train.csv
 │
 ├── 1-creating_dataset/
-│   └── create_dataset.py             # Generates 3 explanations per Q/A
+│   ├── create_dataset.py                 # Generates 3 LLM explanations per question
+│   └── explainrag_hotpot_llama.jsonl
 │
 ├── 2-validating_dataset/
-│   ├── validate_dataset.py           # Embedding-based validation
-│   └── figures/
+│   ├── validate_dataset.py               # Embedding validation
 │
 ├── 3-metrics/
 │   ├── cosine_similarity/
-│   ├── jaccard_similarity/
+│   │   └── run_cosine_similarity.py
+│   │
+│   ├── llm_judge/
+│   │   └── run_llm_judge.py              # Baseline classifier using LLM-as-judge
+│   │
 │   └── first_order_logic/
-│
-├── 5-experiment/
-│   └── main.py                       # Orchestrates the full experiment
+│       ├── 01_define_predicate_schema.py
+│       ├── 02_define_logical_rules.py
+│       ├── 03_extract_facts_llm.py
+│       ├── 04_inference_metric_prototype.py
+│       └── logical_rules.json
 │
 ├── 4-analysis/
-│   └── analyze.py                    # Final plots + aggregated results
+│   └── analyze.py                        # Cosine distribution + confusion matrices
 │
+├── 5-experiment/
+│   └── main.py                           # Full orchestrated experiment
+│
+├── records                               # directory to register provenance
 ├── docker-compose.yml
-├── requirements.txt
+└── requirements.txt
 └── install.sh
 ```
 
@@ -156,11 +165,12 @@ This script:
 - generates the explanation dataset  
 - validates the dataset  
 - runs:
-  - Jaccard  
-  - Cosine  
+  - Cosine 
+  - LLM as a Judge
   - Logical inference (predicates, rules, fact extraction, multi-trial)  
 - stores all metric outputs  
 - updates the database at every stage  
+- Runs the analysis script `4-analysis\analyze.py` which generate summary CSVs and graphs (boxplots, bar plots, grouped comparisons)
 
 Run:
 
@@ -169,23 +179,7 @@ cd 5-experiment
 python main.py
 ```
 
-A new row will appear in the `experiment` table.
-
----
-
-## Step 2 — Analyze Results
-
-After the experiment is complete:
-
-```bash
-cd 4-analysis
-python analyze.py
-```
-
-Outputs include:
-
-- summary CSVs  
-- graphs (boxplots, bar plots, grouped comparisons)
+A new row will appear in the `experiment`.
 
 ---
 
@@ -194,13 +188,15 @@ Outputs include:
 ### Tables include:
 
 - `experiment`  
-- `creation`  
+- `hotpot_sample`  
 - `xai_dataset`  
-- `validation`  
-- `cosine_results`  
-- `jaccard_results`  
-- `logic_metric`  
-- `logic_result`
+- `validity`  
+- `cosine_similarity`  
+- `llm_judge`  
+- `first_order_logic`  
+- `predicates`
+- `rules`
+- `facts`
 
 Each script updates the DB through `provenance.py`.
 
