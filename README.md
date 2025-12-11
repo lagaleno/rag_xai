@@ -54,11 +54,20 @@ The workflow includes:
 
 You need:
 
-- **Python 3.9+**
-- **Docker & Docker Compose**
+- Python 3.9+
+- Docker & Docker Compose
 - Linux or macOS recommended
-- `pip` installed
-- Internet access (for downloading HotpotQA and LLM responses)
+- pip installed
+- Internet access (for downloading HotpotQA)
+- Ollama installed and running: https://ollama.com/download
+
+LLaMA model pulled locally, e.g.:
+```bash
+ollama pull llama3       # or llama3.1 / llama3:instruct
+```
+The pipeline uses Ollama's HTTP server at: `http://localhost:11434/api/chat`
+Make sure it is running: `ollama serve`
+You can check available models: `ollama ls`
 
 ---
 
